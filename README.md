@@ -1,0 +1,1 @@
+Disclaimer: This is not financial advice. Any use of this information is entirely the user's responsibility. Values and analysis may be inaccurate. Always conduct your own research and consult a qualified financial advisor before making investment decisions.
