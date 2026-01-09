@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Total DCF Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --primary: #2c3e50; --accent: #2980b9; --accent-rev: #8e44ad; --bg: #f4f7f6; --text: #333; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); padding: 20px; margin: 0; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        /* Grid Layouts */
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; }
+        @media (max-width: 900px) { .dashboard-grid, .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+        /* Kort styling */
+        .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        h2 { margin: 0; font-size: 1.2em; color: var(--primary); }
+        h3 { margin: 0; font-size: 1em; color: #666; font-weight: normal; }
+
+        /* Input styling */
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.85em; color: var(--primary); }
+        input[type="number"], input[type="text"], select {
+            width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95em; box-sizing: border-box;
+        }
+        input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+        /* Hjelpe-lenker */
+        .help-link { font-size: 0.75em; color: var(--accent); text-decoration: none; display: block; margin-top: 2px; }
+        .help-link:hover { text-decoration: underline; }
+
+        /* Forward DCF Section (Left) */
+        .scenario-box { padding: 10px; border-radius: 6px; border: 1px solid #eee; background: #fafafa; margin-bottom: 10px; }
+        .bear { border-left: 4px solid #e74c3c; } .base { border-left: 4px solid #3498db; } .bull { border-left: 4px solid #2ecc71; }
+        
+        /* Reverse DCF Section (Right) */
+        .reverse-box { background: #fdf2ff; border: 1px solid #e8daef; border-radius: 8px; padding: 20px; text-align: center; }
+        .implied-rate { font-size: 2.5em; font-weight: bold; color: var(--accent-rev); margin: 10px 0; }
+        
+        /* Resultat bokser */
+        .result-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #f0f0f0; }
+        .result-val { font-weight: bold; font-size: 1.1em; }
+        .undervalued { color: #27ae60; } .overvalued { color: #c0392b; }
+
+        button.calc-btn {
+            background: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; cursor: pointer; font-weight: bold; margin-top: 10px;
+        }
+        button.calc-btn:hover { background: #34495e; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div class="card">
+        <div class="card-header">
+            <h2>1. Felles Input (Hent tall én gang)</h2>
+            <select id="method" style="width: auto;" onchange="toggleInputs()">
+                <option value="fcf">Metode: Free Cash Flow</option>
+                <option value="eps">Metode: EPS</option>
+            </select>
+        </div>
+        
+        <div class="grid-4">
+            <div>
+                <label>Ticker / Selskap</label>
+                <input type="text" id="ticker" placeholder="EQNR" oninput="updateLinks()">
+            </div>
+            <div>
+                <label>Aksjekurs (NOK)</label>
+                <input type="number" id="currentPrice" value="150" step="0.1">
+            </div>
+            <div>
+                <label>Avkastningskrav (WACC %)</label>
+                <input type="number" id="discountRate" value="10.0" step="0.5">
+            </div>
+            <div>
+                <label>Antall Aksjer (Mill)</label>
+                <input type="number" id="shares" value="100">
+                <a id="link-shares" href="#" target="_blank" class="help-link">Finn antall aksjer</a>
+            </div>
+        </div>
+
+        <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+            <div id="fcf-inputs" class="grid-2">
+                <div>
+                    <label>Total Free Cash Flow (Siste 12 mnd, Mill NOK)</label>
+                    <input type="number" id="totalFcf" value="1000">
+                    <a id="link-fcf" href="#" target="_blank" class="help-link">Finn Cash Flow (Yahoo)</a>
+                </div>
+                <div style="display:flex; align-items:center;">
+                    <div style="background:#f8f9fa; padding:10px; border-radius:6px; width:100%;">
+                        Startverdi per aksje: <strong id="metricPerShareDisplay" style="font-size:1.2em; color:var(--accent);">10.00</strong> NOK
+                    </div>
+                </div>
+            </div>
+            
+            <div id="eps-inputs" style="display:none;">
+                <label>Earnings Per Share (EPS)</label>
+                <input type="number" id="epsValue" value="10.00">
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        
+        <div>
+            <div class="card">
+                <div class="card-header">
+                    <h2>2. Verdsettelse (Forward DCF)</h2>
+                    <h3>Hva er aksjen verdt? (5 år + Exit)</h3>
+                </div>
+
+                <div class="grid-3">
+                    <div class="scenario-box bear">
+                        <label>🐻 Bear (Vekst / Exit)</label>
+                        <input type="number" id="bearG" value="2" placeholder="Vekst %">
+                        <input type="number" id="bearM" value="10" placeholder="Exit x" style="margin-top:5px;">
+                        <label style="margin-top:5px;">Sannsynlighet %</label>
+                        <input type="number" id="bearP" value="25">
+                    </div>
+                    <div class="scenario-box base">
+                        <label>🔵 Base (Vekst / Exit)</label>
+                        <input type="number" id="baseG" value="8" placeholder="Vekst %">
+                        <input type="number" id="baseM" value="15" placeholder="Exit x" style="margin-top:5px;">
+                        <label style="margin-top:5px;">Sannsynlighet %</label>
+                        <input type="number" id="baseP" value="50">
+                    </div>
+                    <div class="scenario-box bull">
+                        <label>🐂 Bull (Vekst / Exit)</label>
+                        <input type="number" id="bullG" value="15" placeholder="Vekst %">
+                        <input type="number" id="bullM" value="20" placeholder="Exit x" style="margin-top:5px;">
+                        <label style="margin-top:5px;">Sannsynlighet %</label>
+                        <input type="number" id="bullP" value="25">
+                    </div>
+                </div>
+                <small id="probWarning" style="color:red; display:block; text-align:right; min-height:1.2em;"></small>
+
+                <div style="margin-top: 15px; background: #f4f6f7; padding: 15px; border-radius: 8px;">
+                    <div class="result-row">
+                        <span>Estimert Verdi (Vektet):</span>
+                        <span class="result-val" id="valWeighted">--- NOK</span>
+                    </div>
+                    <div class="result-row" style="border-bottom:none;">
+                        <span>Oppside / Nedside:</span>
+                        <span class="result-val" id="valUpside">---%</span>
+                    </div>
+                </div>
+                <div style="height: 200px; margin-top:15px;">
+                    <canvas id="forwardChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="card">
+                <div class="card-header">
+                    <h2>3. Forventninger (Reverse DCF)</h2>
+                    <h3>Hva priser markedet inn? (10 år)</h3>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label>Terminal Vekst (etter år 10)</label>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="number" id="termG" value="2.0" step="0.1" style="width:80px;"> 
+                        <span style="font-size:0.9em; color:#666;">% (Evig vekst)</span>
+                    </div>
+                </div>
+
+                <div class="reverse-box">
+                    <div style="text-transform: uppercase; font-size: 0.8em; color: #888; letter-spacing: 1px;">Implisitt Vekstkrav</div>
+                    <div class="implied-rate" id="revImplied">---%</div>
+                    <div style="font-size: 0.9em; color: #666;" id="revComment">For å forsvare dagens kurs må selskapet vokse med denne raten årlig i 10 år.</div>
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; border: 1px solid #eee; border-radius: 8px;">
+                    <div class="result-row" style="border:none; padding:0;">
+                        <span>Ditt Base Case (til venstre):</span>
+                        <span style="font-weight:bold;" id="dispBaseG">8%</span>
+                    </div>
+                    <div style="margin-top:10px; font-size:0.9em; line-height:1.4em;" id="revVerdict">
+                        ---
+                    </div>
+                </div>
+
+                <button class="calc-btn" onclick="calculateAll()">OPPDATER ALLE TALL</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let chartFwd = null;
+
+    window.onload = function() {
+        updateLinks();
+        toggleInputs();
+        calculateAll();
+        
+        // Lytt til alle inputs
+        document.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('input', () => {
+                if(el.id === 'ticker') updateLinks();
+                else calculateAll();
+            });
+        });
+    };
+
+    function updateLinks() {
+        const t = document.getElementById('ticker').value || 'AAPL';
+        document.getElementById('link-fcf').href = `https://finance.yahoo.com/quote/${t}/cash-flow`;
+        document.getElementById('link-shares').href = `https://finance.yahoo.com/quote/${t}/key-statistics`;
+    }
+
+    function toggleInputs() {
+        const isFCF = document.getElementById('method').value === 'fcf';
+        document.getElementById('fcf-inputs').style.display = isFCF ? 'grid' : 'none';
+        document.getElementById('eps-inputs').style.display = isFCF ? 'none' : 'block';
+        calculateAll();
+    }
+
+    function getNum(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+    function calculateAll() {
+        // --- 1. STARTVERDI ---
+        let startVal = 0;
+        if (document.getElementById('method').value === 'fcf') {
+            const fcf = getNum('totalFcf');
+            const shares = getNum('shares');
+            if (shares > 0) startVal = fcf / shares;
+        } else {
+            startVal = getNum('epsValue');
+        }
+        document.getElementById('metricPerShareDisplay').innerText = startVal.toFixed(2);
+
+        const price = getNum('currentPrice');
+        const wacc = getNum('discountRate');
+
+        // --- 2. FORWARD DCF (5 År + Exit Multiple) ---
+        function calcFwd(g, m) {
+            let val = 0, curr = startVal;
+            let future = [];
+            for (let i=1; i<=5; i++) {
+                curr *= (1 + g/100);
+                val += curr / Math.pow(1 + wacc/100, i);
+                future.push(curr);
+            }
+            let term = (future[4] * m) / Math.pow(1 + wacc/100, 5);
+            return val + term;
+        }
+
+        const bearVal = calcFwd(getNum('bearG'), getNum('bearM'));
+        const baseVal = calcFwd(getNum('baseG'), getNum('baseM'));
+        const bullVal = calcFwd(getNum('bullG'), getNum('bullM'));
+
+        const pSum = getNum('bearP') + getNum('baseP') + getNum('bullP');
+        document.getElementById('probWarning').innerText = Math.abs(pSum - 100) > 0.1 ? `⚠️ Sum % = ${pSum}` : "";
+
+        const wVal = (bearVal * getNum('bearP')/100) + (baseVal * getNum('baseP')/100) + (bullVal * getNum('bullP')/100);
+        
+        // Oppdater Forward UI
+        document.getElementById('valWeighted').innerText = wVal.toFixed(2) + " NOK";
+        let upDown = price > 0 ? ((wVal - price)/price)*100 : 0;
+        const upEl = document.getElementById('valUpside');
+        upEl.innerText = (upDown > 0 ? "+" : "") + upDown.toFixed(1) + "%";
+        upEl.className = "result-val " + (upDown > 0 ? "undervalued" : "overvalued");
+
+        updateChart(bearVal, baseVal, bullVal, wVal, price);
+
+        // --- 3. REVERSE DCF (10 År + Gordon Growth) ---
+        const termG = getNum('termG');
+        
+        // Solver for Implied Growth (binærsøk)
+        let impliedG = solveReverse(price, startVal, wacc, termG);
+        
+        // Oppdater Reverse UI
+        document.getElementById('revImplied').innerText = impliedG.toFixed(1) + "%";
+        document.getElementById('dispBaseG').innerText = getNum('baseG') + "%";
+
+        const verdictDiv = document.getElementById('revVerdict');
+        const baseG = getNum('baseG');
+        
+        if (impliedG > baseG + 2) {
+            verdictDiv.innerHTML = `<span style="color:#c0392b">⚠️ <strong>Høye forventninger:</strong> Markedet krever ${impliedG.toFixed(1)}% vekst, som er mye høyere enn ditt Base Case (${baseG}%). Aksjen kan være dyr.</span>`;
+        } else if (impliedG < baseG - 2) {
+            verdictDiv.innerHTML = `<span style="color:#27ae60">✅ <strong>Lav terskel:</strong> Markedet krever kun ${impliedG.toFixed(1)}% vekst. Hvis du tror på ${baseG}%, er dette en "Margin of Safety".</span>`;
+        } else {
+            verdictDiv.innerHTML = `<span style="color:#f39c12">⚖️ <strong>Fair:</strong> Markedets forventning (${impliedG.toFixed(1)}%) er omtrent lik ditt estimat.</span>`;
+        }
+    }
+
+    // Hjelpefunksjon for Reverse DCF (Solver)
+    function solveReverse(targetPrice, startVal, r, gTerm) {
+        // Funksjon som beregner verdi gitt vekst (10 år)
+        function calcVal(g) {
+            let val = 0, curr = startVal;
+            for(let i=1; i<=10; i++) {
+                curr *= (1 + g/100);
+                val += curr / Math.pow(1 + r/100, i);
+            }
+            // Terminal (Gordon)
+            if(r <= gTerm) return 999999; // Error catch
+            let termVal = (curr * (1 + gTerm/100)) / ((r - gTerm)/100);
+            return val + (termVal / Math.pow(1 + r/100, 10));
+        }
+
+        let low = -50, high = 100, mid = 0;
+        for(let i=0; i<50; i++) {
+            mid = (low+high)/2;
+            let v = calcVal(mid);
+            if(Math.abs(v - targetPrice) < 0.1) return mid;
+            if(v < targetPrice) low = mid; else high = mid;
+        }
+        return mid;
+    }
+
+    function updateChart(bear, base, bull, weighted, price) {
+        const ctx = document.getElementById('forwardChart').getContext('2d');
+        if (chartFwd) chartFwd.destroy();
+        chartFwd = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Bear', 'Base', 'Bull', 'Vektet', 'Pris'],
+                datasets: [{
+                    label: 'NOK',
+                    data: [bear, base, bull, weighted, price],
+                    backgroundColor: ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#95a5a6'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+</script>
+
+</body>
+</html>
