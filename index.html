@@ -7,6 +7,10 @@
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Konfigurer PDF Worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
 
     <style>
         :root { --primary: #2c3e50; --accent: #2980b9; --accent-rev: #8e44ad; --bg: #f4f7f6; --text: #333; --success: #27ae60; }
@@ -224,25 +228,28 @@
 </div>
 
 <script>
-    // --- PDF CONFIG ---
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
+    // --- VARIABLER ---
     let chartFwd = null;
     let foundData = { 'Revenue': null, 'Gross Profit': null, 'Operating Profit': null, 'Net Profit': null, 'EPS': null, 'Free Cash Flow': null, 'Shares': null };
 
-    // --- INIT ---
+    // --- OPPSTART ---
     window.onload = function() {
-        toggleInputs();
-        calculateAll();
-        setupDragDrop();
-        
-        // Listeners
-        document.querySelectorAll('input, select').forEach(el => {
-            if(el.type !== 'file') el.addEventListener('input', () => calculateAll());
-        });
+        console.log("App startet...");
+        try {
+            toggleInputs();
+            calculateAll();
+            setupDragDrop();
+            
+            // Lytt til inputs
+            document.querySelectorAll('input, select').forEach(el => {
+                if(el.type !== 'file') el.addEventListener('input', () => calculateAll());
+            });
+        } catch (e) {
+            console.error("Init feil:", e);
+        }
     };
 
-    // --- MODE SWITCHING (FIXED) ---
+    // --- MODUS BYTTE ---
     function switchMode(mode) {
         const btnMan = document.getElementById('tab-manual');
         const btnAuto = document.getElementById('tab-auto');
@@ -262,12 +269,120 @@
         }
     }
 
-    // --- PDF LOGIC ---
+    // --- KALKULATOR (MATEMATIKK) ---
+    // Denne delen er uavhengig av PDF-leseren
+    function getNum(id) { 
+        let val = parseFloat(document.getElementById(id).value);
+        return isNaN(val) ? 0 : val;
+    }
+
+    function toggleInputs() {
+        const isFCF = document.getElementById('method').value === 'fcf';
+        document.getElementById('fcf-inputs').style.display = isFCF ? 'grid' : 'none';
+        document.getElementById('eps-inputs').style.display = isFCF ? 'none' : 'block';
+        calculateAll();
+    }
+
+    function calculateAll() {
+        try {
+            // 1. Startverdi
+            let startVal = 0;
+            if (document.getElementById('method').value === 'fcf') {
+                const fcf = getNum('totalFcf');
+                const shares = getNum('shares');
+                if(shares > 0) startVal = fcf / shares;
+            } else { startVal = getNum('epsValue'); }
+            
+            document.getElementById('metricPerShareDisplay').innerText = startVal.toFixed(2);
+            const price = getNum('currentPrice');
+            const wacc = getNum('discountRate');
+
+            // 2. Forward DCF (5 år + Exit)
+            function cf(g,m) {
+                let v=0, c=startVal, arr=[];
+                for(let i=1;i<=5;i++){ c*=(1+g/100); v+=c/Math.pow(1+wacc/100,i); arr.push(c); }
+                // Exit term
+                let termVal = (arr[4] * m) / Math.pow(1+wacc/100, 5);
+                return v + termVal;
+            }
+            const bear=cf(getNum('bearG'),getNum('bearM'));
+            const base=cf(getNum('baseG'),getNum('baseM'));
+            const bull=cf(getNum('bullG'),getNum('bullM'));
+
+            const pSum = getNum('bearP') + getNum('baseP') + getNum('bullP');
+            document.getElementById('probWarning').innerText = Math.abs(pSum - 100) > 0.1 ? `⚠️ Sum % = ${pSum}` : "";
+
+            const wVal = (bear*getNum('bearP')/100) + (base*getNum('baseP')/100) + (bull*getNum('bullP')/100);
+            
+            document.getElementById('valWeighted').innerText = wVal.toFixed(2);
+            let ud = price>0 ? ((wVal-price)/price)*100 : 0;
+            const uEl = document.getElementById('valUpside');
+            uEl.innerText = (ud>0?"+":"") + ud.toFixed(1) + "%";
+            uEl.className = "result-val " + (ud>0?"undervalued":"overvalued");
+            
+            updateChart(bear, base, bull, wVal, price);
+
+            // 3. Reverse DCF (10 år + Gordon)
+            const termG = getNum('termG');
+            let impG = solveRev(price, startVal, wacc, termG);
+            document.getElementById('revImplied').innerText = price>0 ? impG.toFixed(1)+"%" : "---%";
+            
+            const vDiv = document.getElementById('revVerdict');
+            const bG = getNum('baseG');
+            if(price>0) {
+                if(impG > bG+2) vDiv.innerHTML = `<span style="color:#c0392b">⚠️ Markedet krever ${impG.toFixed(1)}% (Høyt)</span>`;
+                else if(impG < bG-2) vDiv.innerHTML = `<span style="color:#27ae60">✅ Markedet krever ${impG.toFixed(1)}% (Lavt)</span>`;
+                else vDiv.innerHTML = `<span style="color:#f39c12">⚖️ Fair priset</span>`;
+            } else vDiv.innerText = "---";
+        } catch(err) {
+            console.error("Kalkuleringsfeil:", err);
+        }
+    }
+
+    function solveRev(tPrice, sVal, r, gT) {
+        if(tPrice<=0 || sVal<=0) return 0;
+        
+        function calc(g) {
+            let v=0, c=sVal;
+            // 10 år forecast
+            for(let i=1;i<=10;i++){ c*=(1+g/100); v+=c/Math.pow(1+r/100,i); }
+            // Gordon terminal
+            if(r<=gT) return 999999;
+            let term = (c*(1+gT/100)) / ((r-gT)/100);
+            return v + (term/Math.pow(1+r/100,10));
+        }
+
+        let l=-50, h=100, m=0;
+        // Binærsøk
+        for(let i=0;i<50;i++){ 
+            m=(l+h)/2; 
+            let val=calc(m); 
+            if(Math.abs(val-tPrice)<0.1) return m; 
+            if(val<tPrice) l=m; else h=m; 
+        }
+        return m;
+    }
+
+    function updateChart(be,ba,bu,w,p) {
+        const ctx = document.getElementById('forwardChart').getContext('2d');
+        if(chartFwd) chartFwd.destroy();
+        chartFwd = new Chart(ctx, {
+            type:'bar',
+            data: { labels: ['Bear','Base','Bull','Vektet','Pris'], datasets:[{ label: 'NOK', data:[be,ba,bu,w,p], backgroundColor:['#e74c3c','#3498db','#2ecc71','#f1c40f','#95a5a6'], borderRadius:4 }] },
+            options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+        });
+    }
+
+    function updateLinks(){} // Dummy
+
+    // --- PDF LOGIKK (ISOLERT) ---
     function setupDragDrop() {
         const zone = document.getElementById('drop-zone');
         const input = document.getElementById('fileInput');
+        if(!zone || !input) return;
+
         zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
-        zone.addEventListener('dragleave', () => zone.classList.remove('dragover');
+        zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
         zone.addEventListener('drop', (e) => {
             e.preventDefault(); zone.classList.remove('dragover');
             if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
@@ -278,7 +393,7 @@
     function handleFile(file) {
         if(file.type !== 'application/pdf') { alert("Kun PDF filer støttes."); return; }
         document.getElementById('file-name').innerText = file.name;
-        // Reset
+        // Reset data
         for(let k in foundData) foundData[k] = null;
     }
 
@@ -300,8 +415,14 @@
         reader.onload = async function(e) {
             try {
                 const typedarray = new Uint8Array(e.target.result);
+                
+                // Sjekk om PDF lib er lastet
+                if (typeof pdfjsLib === 'undefined') {
+                    throw new Error("PDF-bibliotek ikke lastet. Sjekk internettforbindelse.");
+                }
+
                 const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                const maxPages = Math.min(pdf.numPages, 30); // Max 30 pages scan
+                const maxPages = Math.min(pdf.numPages, 30); // Max 30 sider scan
 
                 for(let i=1; i<=maxPages; i++) {
                     statusEl.innerText = `Leser side ${i} av ${maxPages}...`;
@@ -313,16 +434,18 @@
                     
                     analyzeTextChunk(text);
                     
-                    // Release memory
+                    // Frigjør minne
                     page.cleanup();
-                    await new Promise(r => setTimeout(r, 10)); // UI Breath
+                    // Pause for UI oppdatering
+                    await new Promise(r => setTimeout(r, 10)); 
                 }
                 statusEl.innerText = "Ferdig!";
                 updateSummaryTable();
                 alert("Ferdig! Sjekk tabellen og fyll inn dagens kurs.");
             } catch(err) {
                 console.error(err);
-                alert("Feil ved lesing av PDF. Prøv en annen fil.");
+                statusEl.innerText = "Feil: " + err.message;
+                alert("Kunne ikke lese PDF: " + err.message);
             }
         };
         reader.readAsArrayBuffer(file);
@@ -342,6 +465,7 @@
         const parseNum = (str) => {
             if(!str) return 0;
             let c = str.replace(/\s/g, '');
+            // Enkel heuristikk for komma/punktum
             if(c.includes(',') && c.includes('.')) {
                 if(c.lastIndexOf(',') > c.lastIndexOf('.')) c = c.replace(/\./g, '').replace(',', '.');
                 else c = c.replace(/,/g, '');
@@ -350,7 +474,7 @@
         };
 
         for(const [k, reg] of Object.entries(patterns)) {
-            if(foundData[k]) continue; // Keep first match
+            if(foundData[k]) continue; // Behold første treff
             const m = text.match(reg);
             if(m && m[1]) {
                 const val = parseNum(m[1]);
@@ -361,6 +485,8 @@
 
     function updateSummaryTable() {
         const body = document.getElementById('summaryTableBody');
+        if(!body) return;
+        
         body.innerHTML = "";
         for(const [k, v] of Object.entries(foundData)) {
             if(v) {
@@ -372,83 +498,6 @@
         }
         calculateAll();
     }
-
-    // --- CALC LOGIC ---
-    function toggleInputs() {
-        const isFCF = document.getElementById('method').value === 'fcf';
-        document.getElementById('fcf-inputs').style.display = isFCF ? 'grid' : 'none';
-        document.getElementById('eps-inputs').style.display = isFCF ? 'none' : 'block';
-        calculateAll();
-    }
-    function getNum(id) { return parseFloat(document.getElementById(id).value) || 0; }
-
-    function calculateAll() {
-        let startVal = 0;
-        if (document.getElementById('method').value === 'fcf') {
-            const fcf = getNum('totalFcf');
-            const shares = getNum('shares');
-            if(shares > 0) startVal = fcf / shares;
-        } else { startVal = getNum('epsValue'); }
-        
-        document.getElementById('metricPerShareDisplay').innerText = startVal.toFixed(2);
-        const price = getNum('currentPrice');
-        const wacc = getNum('discountRate');
-
-        // Forward
-        function cf(g,m) {
-            let v=0, c=startVal, arr=[];
-            for(let i=1;i<=5;i++){ c*=(1+g/100); v+=c/Math.pow(1+wacc/100,i); arr.push(c); }
-            return v + ((arr[4]*m)/Math.pow(1+wacc/100,5));
-        }
-        const bear=cf(getNum('bearG'),getNum('bearM')), base=cf(getNum('baseG'),getNum('baseM')), bull=cf(getNum('bullG'),getNum('bullM'));
-        const wVal = (bear*getNum('bearP')/100) + (base*getNum('baseP')/100) + (bull*getNum('bullP')/100);
-        
-        document.getElementById('valWeighted').innerText = wVal.toFixed(2);
-        let ud = price>0 ? ((wVal-price)/price)*100 : 0;
-        const uEl = document.getElementById('valUpside');
-        uEl.innerText = (ud>0?"+":"") + ud.toFixed(1) + "%";
-        uEl.className = "result-val " + (ud>0?"undervalued":"overvalued");
-        
-        updateChart(bear, base, bull, wVal, price);
-
-        // Reverse
-        const termG = getNum('termG');
-        let impG = solveRev(price, startVal, wacc, termG);
-        document.getElementById('revImplied').innerText = price>0 ? impG.toFixed(1)+"%" : "---%";
-        
-        const vDiv = document.getElementById('revVerdict');
-        const bG = getNum('baseG');
-        if(price>0) {
-            if(impG > bG+2) vDiv.innerHTML = `<span style="color:#c0392b">⚠️ Markedet krever ${impG.toFixed(1)}% (Høyt)</span>`;
-            else if(impG < bG-2) vDiv.innerHTML = `<span style="color:#27ae60">✅ Markedet krever ${impG.toFixed(1)}% (Lavt)</span>`;
-            else vDiv.innerHTML = `<span style="color:#f39c12">⚖️ Fair priset</span>`;
-        } else vDiv.innerText = "---";
-    }
-
-    function solveRev(tPrice, sVal, r, gT) {
-        if(tPrice<=0) return 0;
-        function calc(g) {
-            let v=0, c=sVal;
-            for(let i=1;i<=10;i++){ c*=(1+g/100); v+=c/Math.pow(1+r/100,i); }
-            if(r<=gT) return 999999;
-            return v + (((c*(1+gT/100))/(r-gT)*100)/Math.pow(1+r/100,10));
-        }
-        let l=-50, h=100, m=0;
-        for(let i=0;i<50;i++){ m=(l+h)/2; let val=calc(m); if(Math.abs(val-tPrice)<0.1) return m; if(val<tPrice) l=m; else h=m; }
-        return m;
-    }
-
-    function updateChart(be,ba,bu,w,p) {
-        const ctx = document.getElementById('forwardChart').getContext('2d');
-        if(chartFwd) chartFwd.destroy();
-        chartFwd = new Chart(ctx, {
-            type:'bar',
-            data: { labels: ['Bear','Base','Bull','Vektet','Pris'], datasets:[{ data:[be,ba,bu,w,p], backgroundColor:['#e74c3c','#3498db','#2ecc71','#f1c40f','#95a5a6'], borderRadius:4 }] },
-            options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
-        });
-    }
-
-    function updateLinks(){}
 </script>
 
 </body>
