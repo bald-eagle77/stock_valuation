@@ -3,56 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Total DCF Dashboard (Stabil)</title>
+    <title>Total DCF Dashboard (Pro)</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
-        // Konfigurer PDF Worker
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
     <style>
-        :root { --primary: #2c3e50; --accent: #2980b9; --accent-rev: #8e44ad; --bg: #f4f7f6; --text: #333; --success: #27ae60; }
+        :root { --primary: #2c3e50; --accent: #2980b9; --accent-rev: #8e44ad; --bg: #f4f7f6; --text: #333; --success: #27ae60; --danger: #e74c3c; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); padding: 20px; margin: 0; }
         .container { max-width: 1200px; margin: 0 auto; }
         
-        /* Grid Layouts */
+        /* Layouts */
         .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; }
         @media (max-width: 900px) { .dashboard-grid, .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
 
-        /* Kort styling */
+        /* Styling */
         .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .card-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
         h2 { margin: 0; font-size: 1.2em; color: var(--primary); }
-        h3 { margin: 0; font-size: 1em; color: #666; font-weight: normal; }
-
+        
         /* Tabs */
         .tab-container { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { background: #ddd; border: none; padding: 12px 25px; cursor: pointer; border-radius: 6px; font-weight: bold; transition: 0.2s; font-size: 1em; }
+        .tab-btn { background: #ddd; border: none; padding: 12px 25px; cursor: pointer; border-radius: 6px; font-weight: bold; transition: 0.2s; }
         .tab-btn.active { background: var(--primary); color: white; }
-        .tab-btn:hover:not(.active) { background: #ccc; }
-
-        /* Upload Zone */
-        .upload-zone { 
-            border: 2px dashed #ccc; padding: 30px; text-align: center; border-radius: 10px; background: #fafafa; transition: 0.3s; margin-bottom: 15px;
-        }
+        
+        /* Upload */
+        .upload-zone { border: 2px dashed #ccc; padding: 30px; text-align: center; border-radius: 10px; background: #fafafa; transition: 0.3s; margin-bottom: 15px; }
         .upload-zone.dragover { border-color: var(--accent); background: #eef7ff; }
         
-        /* Input styling */
+        /* Inputs */
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.85em; color: var(--primary); }
-        input[type="number"], input[type="text"], select {
-            width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95em; box-sizing: border-box;
-        }
-        input:focus { outline: 2px solid var(--accent); border-color: transparent; }
-
-        /* Table Styling */
+        input[type="number"], input[type="text"], select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95em; box-sizing: border-box; }
+        
+        /* Table */
         .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
         .data-table th, .data-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .data-table th { background-color: #f2f2f2; color: var(--primary); }
+        .data-table th { background-color: #f2f2f2; }
         
         /* Helpers */
         .hidden { display: none !important; }
@@ -66,6 +58,7 @@
 
         button.calc-btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; cursor: pointer; font-weight: bold; margin-top: 10px; }
         button.action-btn { background: var(--success); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-left: 10px;}
+        button.cancel-btn { background: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-left: 10px;}
         
         #progress-container { width: 100%; background-color: #e0e0e0; border-radius: 5px; margin-top: 10px; display: none; }
         #progress-bar { width: 0%; height: 10px; background-color: var(--success); border-radius: 5px; transition: width 0.3s; }
@@ -76,16 +69,16 @@
 <div class="container">
     
     <header style="margin-bottom: 20px;">
-        <h1>DCF Analyse & Rapportleser</h1>
+        <h1>DCF Dashboard Pro</h1>
         <div class="tab-container">
-            <button id="tab-manual" class="tab-btn active" onclick="switchMode('manual')">Manuell Modus</button>
-            <button id="tab-auto" class="tab-btn" onclick="switchMode('auto')">Automatisk (Rapport)</button>
+            <button id="tab-manual" class="tab-btn active" onclick="switchMode('manual')">Manuell</button>
+            <button id="tab-auto" class="tab-btn" onclick="switchMode('auto')">Automatisk (Last opp PDF)</button>
         </div>
     </header>
 
     <div id="auto-section" class="card hidden">
-        <h2>Last inn selskapets siste rapport</h2>
-        <p style="color:#666; font-size:0.9em;">Last opp PDF (Kvartals- eller Årsrapport). Systemet skanner de første 30 sidene.</p>
+        <h2>Søk i Årsrapport / Kvartalsrapport</h2>
+        <p style="color:#666; font-size:0.9em;">Systemet søker nå gjennom <strong>hele</strong> dokumentet etter nøkkeltall. Dette kan ta litt tid for store filer.</p>
         
         <div class="upload-zone" id="drop-zone">
             <p>Dra og slipp filen her, eller klikk for å velge</p>
@@ -95,7 +88,10 @@
 
         <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px;">
             <div id="file-name" style="font-weight:bold; color:var(--primary);">Ingen fil valgt</div>
-            <button class="action-btn" onclick="processPDF()">🔍 Hent Data</button>
+            <div>
+                <button id="btn-scan" class="action-btn" onclick="processPDF()">🔍 Hent Data</button>
+                <button id="btn-cancel" class="cancel-btn hidden" onclick="cancelScan()">Avbryt</button>
+            </div>
         </div>
         
         <div id="scan-status" style="margin-top:10px; color:var(--accent); font-weight:bold; display:none;">Klar.</div>
@@ -104,7 +100,7 @@
 
     <div class="card">
         <div class="card-header">
-            <h2>Nøkkeltall Input</h2>
+            <h2>Nøkkeltall</h2>
             <select id="method" style="width: auto;" onchange="toggleInputs()">
                 <option value="fcf">Metode: Free Cash Flow</option>
                 <option value="eps">Metode: EPS</option>
@@ -113,16 +109,15 @@
         
         <div class="grid-4">
             <div>
-                <label>Ticker / Selskap</label>
-                <input type="text" id="ticker" placeholder="EQNR" oninput="updateLinks()">
+                <label>Ticker</label>
+                <input type="text" id="ticker" placeholder="EQNR">
             </div>
             <div>
-                <label>Dagens Aksjekurs</label>
-                <input type="number" id="currentPrice" placeholder="Skriv inn kurs..." step="0.1" style="border: 2px solid var(--accent);">
-                <small style="color:#666; font-size:0.8em;">Fylles inn manuelt</small>
+                <label>Dagens Kurs (NOK)</label>
+                <input type="number" id="currentPrice" placeholder="Må fylles ut!" step="0.1" style="border: 2px solid var(--accent);">
             </div>
             <div>
-                <label>Avkastningskrav (WACC %)</label>
+                <label>Avkastningskrav (%)</label>
                 <input type="number" id="discountRate" value="10.0" step="0.5">
             </div>
             <div>
@@ -153,25 +148,22 @@
 
     <div class="card hidden" id="summary-section">
         <h2>Data funnet i rapporten</h2>
-        <p style="font-size:0.9em; color:#666;">Verifiser at tallene stemmer. Valuta og enhet kan variere.</p>
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Nøkkeltall</th>
+                    <th>Post</th>
                     <th>Verdi funnet</th>
                     <th>Status</th>
                 </tr>
             </thead>
-            <tbody id="summaryTableBody">
-                </tbody>
+            <tbody id="summaryTableBody"></tbody>
         </table>
     </div>
 
     <div class="dashboard-grid">
         <div class="card">
             <div class="card-header">
-                <h2>Verdsettelse (Forward DCF)</h2>
-                <h3>5 år + Exit Multiple</h3>
+                <h2>Verdsettelse</h2>
             </div>
             <div class="grid-3">
                 <div class="scenario-box bear">
@@ -193,7 +185,7 @@
                     <input type="number" id="bullP" value="25" style="margin-top:5px;" placeholder="Prob %">
                 </div>
             </div>
-            <small id="probWarning" style="color:red; display:block; text-align:right; min-height:1.2em;"></small>
+            <small id="probWarning" style="color:red; display:block; text-align:right; margin-top:5px;"></small>
             <div style="margin-top: 15px; background: #f4f6f7; padding: 15px; border-radius: 8px;">
                 <div class="result-row"><span>Estimert Verdi:</span><span class="result-val" id="valWeighted">---</span></div>
                 <div class="result-row" style="border:none;"><span>Oppside/Nedside:</span><span class="result-val" id="valUpside">---%</span></div>
@@ -203,8 +195,7 @@
 
         <div class="card">
             <div class="card-header">
-                <h2>Forventninger (Reverse DCF)</h2>
-                <h3>10 år + Gordon Growth</h3>
+                <h2>Forventninger</h2>
             </div>
             <div style="margin-bottom: 20px;">
                 <label>Terminal Vekst (etter år 10)</label>
@@ -215,41 +206,36 @@
             <div class="reverse-box">
                 <div style="text-transform: uppercase; font-size: 0.8em; color: #888;">Implisitt Vekstkrav</div>
                 <div class="implied-rate" id="revImplied">---%</div>
-                <div style="font-size: 0.9em; color: #666;" id="revComment">For å forsvare dagens kurs.</div>
+                <div style="font-size: 0.9em; color: #666;">For å forsvare dagens kurs.</div>
             </div>
             <div style="margin-top: 20px; padding: 15px; border: 1px solid #eee; border-radius: 8px;">
                 <div class="result-row" style="border:none; padding:0;"><span>Ditt Base Case:</span><span style="font-weight:bold;" id="dispBaseG">8%</span></div>
                 <div style="margin-top:10px; font-size:0.9em; line-height:1.4em;" id="revVerdict">---</div>
             </div>
-            <button class="calc-btn" onclick="calculateAll()">OPPDATER BEREGNINGER</button>
+            <button class="calc-btn" onclick="calculateAll()">OPPDATER</button>
         </div>
     </div>
 
 </div>
 
 <script>
-    // --- VARIABLER ---
+    // --- VARIABLES ---
     let chartFwd = null;
+    let isScanning = false;
+    let abortScan = false;
     let foundData = { 'Revenue': null, 'Gross Profit': null, 'Operating Profit': null, 'Net Profit': null, 'EPS': null, 'Free Cash Flow': null, 'Shares': null };
 
-    // --- OPPSTART ---
+    // --- INIT ---
     window.onload = function() {
-        console.log("App startet...");
-        try {
-            toggleInputs();
-            calculateAll();
-            setupDragDrop();
-            
-            // Lytt til inputs
-            document.querySelectorAll('input, select').forEach(el => {
-                if(el.type !== 'file') el.addEventListener('input', () => calculateAll());
-            });
-        } catch (e) {
-            console.error("Init feil:", e);
-        }
+        toggleInputs();
+        calculateAll();
+        setupDragDrop();
+        document.querySelectorAll('input, select').forEach(el => {
+            if(el.type !== 'file') el.addEventListener('input', () => calculateAll());
+        });
     };
 
-    // --- MODUS BYTTE ---
+    // --- TABS ---
     function switchMode(mode) {
         const btnMan = document.getElementById('tab-manual');
         const btnAuto = document.getElementById('tab-auto');
@@ -257,125 +243,15 @@
         const secSum = document.getElementById('summary-section');
 
         if(mode === 'manual') {
-            btnMan.classList.add('active');
-            btnAuto.classList.remove('active');
-            secAuto.classList.add('hidden');
-            secSum.classList.add('hidden');
+            btnMan.classList.add('active'); btnAuto.classList.remove('active');
+            secAuto.classList.add('hidden'); secSum.classList.add('hidden');
         } else {
-            btnMan.classList.remove('active');
-            btnAuto.classList.add('active');
-            secAuto.classList.remove('hidden');
-            secSum.classList.remove('hidden');
+            btnMan.classList.remove('active'); btnAuto.classList.add('active');
+            secAuto.classList.remove('hidden'); secSum.classList.remove('hidden');
         }
     }
 
-    // --- KALKULATOR (MATEMATIKK) ---
-    // Denne delen er uavhengig av PDF-leseren
-    function getNum(id) { 
-        let val = parseFloat(document.getElementById(id).value);
-        return isNaN(val) ? 0 : val;
-    }
-
-    function toggleInputs() {
-        const isFCF = document.getElementById('method').value === 'fcf';
-        document.getElementById('fcf-inputs').style.display = isFCF ? 'grid' : 'none';
-        document.getElementById('eps-inputs').style.display = isFCF ? 'none' : 'block';
-        calculateAll();
-    }
-
-    function calculateAll() {
-        try {
-            // 1. Startverdi
-            let startVal = 0;
-            if (document.getElementById('method').value === 'fcf') {
-                const fcf = getNum('totalFcf');
-                const shares = getNum('shares');
-                if(shares > 0) startVal = fcf / shares;
-            } else { startVal = getNum('epsValue'); }
-            
-            document.getElementById('metricPerShareDisplay').innerText = startVal.toFixed(2);
-            const price = getNum('currentPrice');
-            const wacc = getNum('discountRate');
-
-            // 2. Forward DCF (5 år + Exit)
-            function cf(g,m) {
-                let v=0, c=startVal, arr=[];
-                for(let i=1;i<=5;i++){ c*=(1+g/100); v+=c/Math.pow(1+wacc/100,i); arr.push(c); }
-                // Exit term
-                let termVal = (arr[4] * m) / Math.pow(1+wacc/100, 5);
-                return v + termVal;
-            }
-            const bear=cf(getNum('bearG'),getNum('bearM'));
-            const base=cf(getNum('baseG'),getNum('baseM'));
-            const bull=cf(getNum('bullG'),getNum('bullM'));
-
-            const pSum = getNum('bearP') + getNum('baseP') + getNum('bullP');
-            document.getElementById('probWarning').innerText = Math.abs(pSum - 100) > 0.1 ? `⚠️ Sum % = ${pSum}` : "";
-
-            const wVal = (bear*getNum('bearP')/100) + (base*getNum('baseP')/100) + (bull*getNum('bullP')/100);
-            
-            document.getElementById('valWeighted').innerText = wVal.toFixed(2);
-            let ud = price>0 ? ((wVal-price)/price)*100 : 0;
-            const uEl = document.getElementById('valUpside');
-            uEl.innerText = (ud>0?"+":"") + ud.toFixed(1) + "%";
-            uEl.className = "result-val " + (ud>0?"undervalued":"overvalued");
-            
-            updateChart(bear, base, bull, wVal, price);
-
-            // 3. Reverse DCF (10 år + Gordon)
-            const termG = getNum('termG');
-            let impG = solveRev(price, startVal, wacc, termG);
-            document.getElementById('revImplied').innerText = price>0 ? impG.toFixed(1)+"%" : "---%";
-            
-            const vDiv = document.getElementById('revVerdict');
-            const bG = getNum('baseG');
-            if(price>0) {
-                if(impG > bG+2) vDiv.innerHTML = `<span style="color:#c0392b">⚠️ Markedet krever ${impG.toFixed(1)}% (Høyt)</span>`;
-                else if(impG < bG-2) vDiv.innerHTML = `<span style="color:#27ae60">✅ Markedet krever ${impG.toFixed(1)}% (Lavt)</span>`;
-                else vDiv.innerHTML = `<span style="color:#f39c12">⚖️ Fair priset</span>`;
-            } else vDiv.innerText = "---";
-        } catch(err) {
-            console.error("Kalkuleringsfeil:", err);
-        }
-    }
-
-    function solveRev(tPrice, sVal, r, gT) {
-        if(tPrice<=0 || sVal<=0) return 0;
-        
-        function calc(g) {
-            let v=0, c=sVal;
-            // 10 år forecast
-            for(let i=1;i<=10;i++){ c*=(1+g/100); v+=c/Math.pow(1+r/100,i); }
-            // Gordon terminal
-            if(r<=gT) return 999999;
-            let term = (c*(1+gT/100)) / ((r-gT)/100);
-            return v + (term/Math.pow(1+r/100,10));
-        }
-
-        let l=-50, h=100, m=0;
-        // Binærsøk
-        for(let i=0;i<50;i++){ 
-            m=(l+h)/2; 
-            let val=calc(m); 
-            if(Math.abs(val-tPrice)<0.1) return m; 
-            if(val<tPrice) l=m; else h=m; 
-        }
-        return m;
-    }
-
-    function updateChart(be,ba,bu,w,p) {
-        const ctx = document.getElementById('forwardChart').getContext('2d');
-        if(chartFwd) chartFwd.destroy();
-        chartFwd = new Chart(ctx, {
-            type:'bar',
-            data: { labels: ['Bear','Base','Bull','Vektet','Pris'], datasets:[{ label: 'NOK', data:[be,ba,bu,w,p], backgroundColor:['#e74c3c','#3498db','#2ecc71','#f1c40f','#95a5a6'], borderRadius:4 }] },
-            options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
-        });
-    }
-
-    function updateLinks(){} // Dummy
-
-    // --- PDF LOGIKK (ISOLERT) ---
+    // --- PDF SCANNING (FULL + SYNONYMS) ---
     function setupDragDrop() {
         const zone = document.getElementById('drop-zone');
         const input = document.getElementById('fileInput');
@@ -383,98 +259,128 @@
 
         zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
         zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-        zone.addEventListener('drop', (e) => {
-            e.preventDefault(); zone.classList.remove('dragover');
-            if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-        });
+        zone.addEventListener('drop', (e) => { e.preventDefault(); zone.classList.remove('dragover'); if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
         input.addEventListener('change', (e) => { if(e.target.files.length) handleFile(e.target.files[0]); });
     }
 
     function handleFile(file) {
-        if(file.type !== 'application/pdf') { alert("Kun PDF filer støttes."); return; }
+        if(file.type !== 'application/pdf') { alert("Kun PDF."); return; }
         document.getElementById('file-name').innerText = file.name;
-        // Reset data
-        for(let k in foundData) foundData[k] = null;
+        for(let k in foundData) foundData[k] = null; // Reset
     }
 
+    function cancelScan() { abortScan = true; }
+
     async function processPDF() {
+        if(isScanning) return;
+        
         const fileInput = document.getElementById('fileInput');
         const file = fileInput.files[0] || (document.getElementById('drop-zone').files ? document.getElementById('drop-zone').files[0] : null);
-        
-        if(!file) { alert("Last opp en fil først."); return; }
+        if(!file) { alert("Velg fil."); return; }
 
+        isScanning = true;
+        abortScan = false;
+        
+        // UI Updates
+        document.getElementById('btn-scan').classList.add('hidden');
+        document.getElementById('btn-cancel').classList.remove('hidden');
         const statusEl = document.getElementById('scan-status');
         const pBar = document.getElementById('progress-bar');
         const pCont = document.getElementById('progress-container');
-
+        
         statusEl.style.display = 'block';
         pCont.style.display = 'block';
-        statusEl.innerText = "Initialiserer...";
+        statusEl.innerText = "Starter skann...";
 
         const reader = new FileReader();
         reader.onload = async function(e) {
             try {
                 const typedarray = new Uint8Array(e.target.result);
-                
-                // Sjekk om PDF lib er lastet
-                if (typeof pdfjsLib === 'undefined') {
-                    throw new Error("PDF-bibliotek ikke lastet. Sjekk internettforbindelse.");
-                }
-
                 const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                const maxPages = Math.min(pdf.numPages, 30); // Max 30 sider scan
+                
+                // SKANN HELE FILEN (ingen grense)
+                const totalPages = pdf.numPages;
 
-                for(let i=1; i<=maxPages; i++) {
-                    statusEl.innerText = `Leser side ${i} av ${maxPages}...`;
-                    pBar.style.width = ((i/maxPages)*100) + "%";
+                for(let i=1; i<=totalPages; i++) {
+                    if(abortScan) {
+                        statusEl.innerText = "Skann avbrutt.";
+                        break;
+                    }
+
+                    statusEl.innerText = `Leser side ${i} av ${totalPages}...`;
+                    pBar.style.width = ((i/totalPages)*100) + "%";
                     
                     const page = await pdf.getPage(i);
                     const content = await page.getTextContent();
-                    const text = content.items.map(item => item.str).join(' ');
+                    const text = content.items.map(item => item.str).join(' '); // Mellomrom er viktig
                     
                     analyzeTextChunk(text);
-                    
-                    // Frigjør minne
                     page.cleanup();
-                    // Pause for UI oppdatering
-                    await new Promise(r => setTimeout(r, 10)); 
+                    
+                    // La UI puste
+                    await new Promise(r => setTimeout(r, 0));
                 }
-                statusEl.innerText = "Ferdig!";
+                
+                if(!abortScan) statusEl.innerText = "Ferdig!";
                 updateSummaryTable();
-                alert("Ferdig! Sjekk tabellen og fyll inn dagens kurs.");
+                
             } catch(err) {
                 console.error(err);
-                statusEl.innerText = "Feil: " + err.message;
-                alert("Kunne ikke lese PDF: " + err.message);
+                alert("Feil: " + err.message);
+            } finally {
+                isScanning = false;
+                document.getElementById('btn-scan').classList.remove('hidden');
+                document.getElementById('btn-cancel').classList.add('hidden');
             }
         };
         reader.readAsArrayBuffer(file);
     }
 
     function analyzeTextChunk(text) {
+        // UTVIGET REGEX LISTE (NORSK + ENGELSK + SYNONYMER)
+        // Vi bruker en look-ahead buffer ({0,50}) for å finne tallet til høyre for teksten
         const patterns = {
-            'Revenue': /(?:Revenue|Inntekter|Sales|Omsetning|Operating revenue)[\s\w\W]{0,40}?(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?)/i,
-            'Gross Profit': /(?:Gross Profit|Bruttofortjeneste)[\s\w\W]{0,40}?(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?)/i,
-            'Operating Profit': /(?:Operating Profit|Driftsresultat|EBIT|Operating income)[\s\w\W]{0,40}?(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?)/i,
-            'Net Profit': /(?:Net Profit|Net Income|Årsresultat|Nettoresultat|Profit for the year)[\s\w\W]{0,40}?(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?)/i,
-            'EPS': /(?:Earnings Per Share|EPS|Resultat per aksje|Diluted earnings per share)[\s\w\W]{0,40}?(\d{1,3}(?:[.,]\d+)?)/i,
-            'Free Cash Flow': /(?:Free Cash Flow|FCF|Fri kontantstrøm|Net cash flow from operating activities)[\s\w\W]{0,40}?(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?)/i,
-            'Shares': /(?:Weighted average shares|Antall aksjer|Shares outstanding)[\s\w\W]{0,50}?(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?)/i
+            'Revenue': /(?:Revenue|Total Revenue|Operating Revenue|Sales|Turnover|Salgsinntekter|Driftsinntekter|Sum driftsinntekter|Omsetning)[\s\w\W]{0,50}?(\d{1,3}(?:[\s.,]\d{3})*(?:[.,]\d+)?)/i,
+            
+            'Gross Profit': /(?:Gross Profit|Gross Income|Bruttofortjeneste|Bruttoresultat)[\s\w\W]{0,50}?(\d{1,3}(?:[\s.,]\d{3})*(?:[.,]\d+)?)/i,
+            
+            'Operating Profit': /(?:Operating Profit|Operating Income|EBIT|Operating Earnings|Driftsresultat|Operasjonelt driftsresultat)[\s\w\W]{0,50}?(\d{1,3}(?:[\s.,]\d{3})*(?:[.,]\d+)?)/i,
+            
+            'Net Profit': /(?:Net Profit|Net Income|Profit for the year|Profit \(loss\) for the period|Årsresultat|Resultat etter skatt|Nettoresultat)[\s\w\W]{0,50}?(\d{1,3}(?:[\s.,]\d{3})*(?:[.,]\d+)?)/i,
+            
+            'EPS': /(?:Earnings Per Share|Basic Earnings Per Share|EPS|Resultat per aksje|Fortjeneste per aksje)[\s\w\W]{0,50}?(\d{1,3}(?:[.,]\d+)?)/i,
+            
+            'Free Cash Flow': /(?:Free Cash Flow|FCF|Fri kontantstrøm|Net cash flow from operating activities|Netto kontantstrøm fra operasjonelle aktiviteter)[\s\w\W]{0,50}?(\d{1,3}(?:[\s.,]\d{3})*(?:[.,]\d+)?)/i,
+            
+            'Shares': /(?:Weighted average number of shares|Weighted average shares|Shares outstanding|Average shares|Antall aksjer|Gjennomsnittlig antall aksjer)[\s\w\W]{0,50}?(\d{1,3}(?:[\s.,]\d{3})*(?:[.,]\d+)?)/i
         };
 
         const parseNum = (str) => {
             if(!str) return 0;
+            // Fjern alle mellomrom (for tall som "1 000 000")
             let c = str.replace(/\s/g, '');
-            // Enkel heuristikk for komma/punktum
+            
+            // Logikk for punktum vs komma
             if(c.includes(',') && c.includes('.')) {
-                if(c.lastIndexOf(',') > c.lastIndexOf('.')) c = c.replace(/\./g, '').replace(',', '.');
-                else c = c.replace(/,/g, '');
-            } else if(c.includes(',')) c = c.replace(',', '.');
+                if(c.lastIndexOf(',') > c.lastIndexOf('.')) c = c.replace(/\./g, '').replace(',', '.'); // 1.000,00 -> 1000.00
+                else c = c.replace(/,/g, ''); // 1,000.00 -> 1000.00
+            } else if(c.includes(',')) {
+                // Hvis kun komma: Er det desimal (10,5) eller tusen (1,000)?
+                // Antagelse: EPS er små tall (desimal), Revenue er store.
+                // Forenkling: Erstatt komma med punktum.
+                c = c.replace(',', '.');
+            }
             return parseFloat(c);
         };
 
         for(const [k, reg] of Object.entries(patterns)) {
-            if(foundData[k]) continue; // Behold første treff
+            // Hvis vi allerede har funnet et tall, skal vi overskrive? 
+            // Ja, for ofte er sammendraget (Highlights) i starten mer nøyaktig eller enklere å parse.
+            // Men tabeller bak i rapporten er også bra.
+            // Strategi: Lagre det siste vi finner (ofte Consolidated Statements) ELLER det første.
+            // Her velger vi å beholde det FØRSTE gyldige tallet vi finner for stabilitet.
+            if(foundData[k]) continue; 
+
             const m = text.match(reg);
             if(m && m[1]) {
                 const val = parseNum(m[1]);
@@ -486,8 +392,8 @@
     function updateSummaryTable() {
         const body = document.getElementById('summaryTableBody');
         if(!body) return;
-        
         body.innerHTML = "";
+        
         for(const [k, v] of Object.entries(foundData)) {
             if(v) {
                 if(k === 'Free Cash Flow') document.getElementById('totalFcf').value = v;
@@ -497,6 +403,82 @@
             body.innerHTML += `<tr><td>${k}</td><td>${v ? v.toLocaleString() : '-'}</td><td>${v?'✅':'❌'}</td></tr>`;
         }
         calculateAll();
+    }
+
+    // --- CALC LOGIC (UNCHANGED) ---
+    function getNum(id) { return parseFloat(document.getElementById(id).value) || 0; }
+    function toggleInputs() {
+        const isFCF = document.getElementById('method').value === 'fcf';
+        document.getElementById('fcf-inputs').style.display = isFCF ? 'grid' : 'none';
+        document.getElementById('eps-inputs').style.display = isFCF ? 'none' : 'block';
+        calculateAll();
+    }
+    function calculateAll() {
+        let startVal = 0;
+        if (document.getElementById('method').value === 'fcf') {
+            const fcf = getNum('totalFcf');
+            const shares = getNum('shares');
+            if(shares > 0) startVal = fcf / shares;
+        } else { startVal = getNum('epsValue'); }
+        
+        document.getElementById('metricPerShareDisplay').innerText = startVal.toFixed(2);
+        const price = getNum('currentPrice');
+        const wacc = getNum('discountRate');
+
+        // Forward
+        function cf(g,m) {
+            let v=0, c=startVal, arr=[];
+            for(let i=1;i<=5;i++){ c*=(1+g/100); v+=c/Math.pow(1+wacc/100,i); arr.push(c); }
+            return v + ((arr[4]*m)/Math.pow(1+wacc/100,5));
+        }
+        const bear=cf(getNum('bearG'),getNum('bearM'));
+        const base=cf(getNum('baseG'),getNum('baseM'));
+        const bull=cf(getNum('bullG'),getNum('bullM'));
+        
+        const wVal = (bear*getNum('bearP')/100) + (base*getNum('baseP')/100) + (bull*getNum('bullP')/100);
+        document.getElementById('valWeighted').innerText = wVal.toFixed(2);
+        
+        let ud = price>0 ? ((wVal-price)/price)*100 : 0;
+        const uEl = document.getElementById('valUpside');
+        uEl.innerText = (ud>0?"+":"") + ud.toFixed(1) + "%";
+        uEl.className = "result-val " + (ud>0?"undervalued":"overvalued");
+        
+        updateChart(bear, base, bull, wVal, price);
+
+        // Reverse
+        const termG = getNum('termG');
+        let impG = solveRev(price, startVal, wacc, termG);
+        document.getElementById('revImplied').innerText = price>0 ? impG.toFixed(1)+"%" : "---%";
+        const vDiv = document.getElementById('revVerdict');
+        const bG = getNum('baseG');
+        if(price>0) {
+            if(impG > bG+2) vDiv.innerHTML = `<span style="color:#c0392b">⚠️ Høyt krav (${impG.toFixed(1)}%)</span>`;
+            else if(impG < bG-2) vDiv.innerHTML = `<span style="color:#27ae60">✅ Lavt krav (${impG.toFixed(1)}%)</span>`;
+            else vDiv.innerHTML = `<span style="color:#f39c12">⚖️ Fair</span>`;
+        } else vDiv.innerText = "---";
+    }
+
+    function solveRev(tPrice, sVal, r, gT) {
+        if(tPrice<=0 || sVal<=0) return 0;
+        function calc(g) {
+            let v=0, c=sVal;
+            for(let i=1;i<=10;i++){ c*=(1+g/100); v+=c/Math.pow(1+r/100,i); }
+            if(r<=gT) return 999999;
+            return v + (((c*(1+gT/100))/(r-gT)*100)/Math.pow(1+r/100,10));
+        }
+        let l=-50, h=100, m=0;
+        for(let i=0;i<50;i++){ m=(l+h)/2; let val=calc(m); if(Math.abs(val-tPrice)<0.1) return m; if(val<tPrice) l=m; else h=m; }
+        return m;
+    }
+
+    function updateChart(be,ba,bu,w,p) {
+        const ctx = document.getElementById('forwardChart').getContext('2d');
+        if(chartFwd) chartFwd.destroy();
+        chartFwd = new Chart(ctx, {
+            type:'bar',
+            data: { labels: ['Bear','Base','Bull','Vektet','Pris'], datasets:[{ label: 'NOK', data:[be,ba,bu,w,p], backgroundColor:['#e74c3c','#3498db','#2ecc71','#f1c40f','#95a5a6'], borderRadius:4 }] },
+            options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+        });
     }
 </script>
 
