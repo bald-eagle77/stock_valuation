@@ -3,15 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Total DCF Dashboard (Stabil)</title>
+    <title>Total DCF Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    </script>
-
     <style>
-        :root { --primary: #2c3e50; --accent: #2980b9; --accent-rev: #8e44ad; --bg: #f4f7f6; --text: #333; --success: #27ae60; }
+        :root { --primary: #2c3e50; --accent: #2980b9; --accent-rev: #8e44ad; --bg: #f4f7f6; --text: #333; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); padding: 20px; margin: 0; }
         .container { max-width: 1200px; margin: 0 auto; }
         
@@ -22,46 +17,29 @@
         .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; }
         @media (max-width: 900px) { .dashboard-grid, .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
 
-        /* Kort styling */
+        /* Cards */
         .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .card-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
         h2 { margin: 0; font-size: 1.2em; color: var(--primary); }
         h3 { margin: 0; font-size: 1em; color: #666; font-weight: normal; }
 
-        /* Tabs */
-        .tab-container { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { background: #ddd; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; font-weight: bold; transition: 0.3s; }
-        .tab-btn.active { background: var(--primary); color: white; }
-        .tab-btn:hover:not(.active) { background: #ccc; }
-
-        /* Upload Zone */
-        .upload-zone { 
-            border: 2px dashed #ccc; padding: 30px; text-align: center; border-radius: 10px; background: #fafafa; transition: 0.3s; margin-bottom: 15px;
-        }
-        .upload-zone.dragover { border-color: var(--accent); background: #eef7ff; }
-        
-        /* Input styling */
+        /* Inputs */
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.85em; color: var(--primary); }
         input[type="number"], input[type="text"], select {
             width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95em; box-sizing: border-box;
         }
         input:focus { outline: 2px solid var(--accent); border-color: transparent; }
 
-        /* Table Styling */
-        .data-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
-        .data-table th, .data-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .data-table th { background-color: #f2f2f2; color: var(--primary); }
-        .data-table tr:nth-child(even) { background-color: #f9f9f9; }
+        /* Help links */
+        .help-link { font-size: 0.75em; color: var(--accent); text-decoration: none; display: block; margin-top: 2px; }
+        .help-link:hover { text-decoration: underline; }
 
-        /* Scenario colors */
         .scenario-box { padding: 10px; border-radius: 6px; border: 1px solid #eee; background: #fafafa; margin-bottom: 10px; }
         .bear { border-left: 4px solid #e74c3c; } .base { border-left: 4px solid #3498db; } .bull { border-left: 4px solid #2ecc71; }
         
-        /* Reverse DCF */
         .reverse-box { background: #fdf2ff; border: 1px solid #e8daef; border-radius: 8px; padding: 20px; text-align: center; }
         .implied-rate { font-size: 2.5em; font-weight: bold; color: var(--accent-rev); margin: 10px 0; }
         
-        /* Results */
         .result-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #f0f0f0; }
         .result-val { font-weight: bold; font-size: 1.1em; }
         .undervalued { color: #27ae60; } .overvalued { color: #c0392b; }
@@ -69,51 +47,20 @@
         button.calc-btn {
             background: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; cursor: pointer; font-weight: bold; margin-top: 10px;
         }
-        button.action-btn { background: var(--success); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-left: 10px;}
-        button:hover { opacity: 0.9; }
+        button.calc-btn:hover { background: #34495e; }
 
-        .hidden { display: none; }
-        
-        /* Progress Bar */
-        #progress-container { width: 100%; background-color: #e0e0e0; border-radius: 5px; margin-top: 10px; display: none; }
-        #progress-bar { width: 0%; height: 10px; background-color: var(--success); border-radius: 5px; transition: width 0.3s; }
+        .warning { color: #c0392b; font-weight: 600; }
+        .muted { color: #666; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
 <div class="container">
     
-    <header style="margin-bottom: 20px;">
-        <h1>DCF Analyse & Rapportleser</h1>
-        <div class="tab-container">
-            <button class="tab-btn active" onclick="switchMode('manual')">Manuell Modus</button>
-            <button class="tab-btn" onclick="switchMode('auto')">Automatisk (Rapport)</button>
-        </div>
-    </header>
-
-    <div id="auto-section" class="card hidden">
-        <h2>Last inn selskapets siste rapport</h2>
-        <p style="color:#666; font-size:0.9em;">Last opp PDF (Kvartals- eller Årsrapport). Systemet skanner de første 30 sidene for nøkkeltall.</p>
-        
-        <div class="upload-zone" id="drop-zone">
-            <p>Dra og slipp filen her, eller klikk for å velge</p>
-            <input type="file" id="fileInput" accept=".pdf" style="display:none;">
-            <button class="calc-btn" style="width:auto; background:#666;" onclick="document.getElementById('fileInput').click()">Velg PDF</button>
-        </div>
-
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px;">
-            <div id="file-name" style="font-weight:bold; color:var(--primary);">Ingen fil valgt</div>
-            <button class="action-btn" onclick="processPDF()">🔍 Hent Data</button>
-        </div>
-        
-        <div id="scan-status" style="margin-top:10px; color:var(--accent); font-weight:bold; display:none;">Klar.</div>
-        <div id="progress-container"><div id="progress-bar"></div></div>
-    </div>
-
     <div class="card">
         <div class="card-header">
-            <h2>Nøkkeltall Input</h2>
-            <select id="method" style="width: auto;" onchange="toggleInputs()">
+            <h2>1. Felles Input (Hent tall én gang)</h2>
+            <select id="method" style="width: auto;" onchange="toggleInputs()" aria-label="Velg metode">
                 <option value="fcf">Metode: Free Cash Flow</option>
                 <option value="eps">Metode: EPS</option>
             </select>
@@ -121,40 +68,41 @@
         
         <div class="grid-4">
             <div>
-                <label>Ticker / Selskap</label>
-                <input type="text" id="ticker" placeholder="EQNR" oninput="updateLinks()">
+                <label for="ticker">Ticker / Selskap</label>
+                <input type="text" id="ticker" placeholder="EQNR" oninput="updateLinks()" aria-label="Ticker">
             </div>
             <div>
-                <label>Dagens Aksjekurs</label>
-                <input type="number" id="currentPrice" placeholder="Skriv inn kurs..." step="0.1" style="border: 2px solid var(--accent);">
-                <small style="color:#666; font-size:0.8em;">Fylles inn manuelt</small>
+                <label for="currentPrice">Aksjekurs (NOK)</label>
+                <input type="number" id="currentPrice" value="150" step="0.1" aria-label="Aksjekurs">
             </div>
             <div>
-                <label>Avkastningskrav (WACC %)</label>
-                <input type="number" id="discountRate" value="10.0" step="0.5">
+                <label for="discountRate">Avkastningskrav (WACC %)</label>
+                <input type="number" id="discountRate" value="10.0" step="0.1" aria-label="Avkastningskrav">
             </div>
             <div>
-                <label>Antall Aksjer (Mill)</label>
-                <input type="number" id="shares" value="100">
+                <label for="shares">Antall Aksjer (Mill)</label>
+                <input type="number" id="shares" value="100" aria-label="Antall aksjer">
+                <a id="link-shares" href="#" target="_blank" class="help-link">Finn antall aksjer</a>
             </div>
         </div>
 
         <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
             <div id="fcf-inputs" class="grid-2">
                 <div>
-                    <label>Total Free Cash Flow (Mill)</label>
-                    <input type="number" id="totalFcf" value="1000">
+                    <label for="totalFcf">Total Free Cash Flow (Siste 12 mnd, Mill NOK)</label>
+                    <input type="number" id="totalFcf" value="1000" aria-label="Total FCF">
+                    <a id="link-fcf" href="#" target="_blank" class="help-link">Finn Cash Flow (Yahoo)</a>
                 </div>
                 <div style="display:flex; align-items:center;">
                     <div style="background:#f8f9fa; padding:10px; border-radius:6px; width:100%;">
-                        Startverdi per aksje: <strong id="metricPerShareDisplay" style="font-size:1.2em; color:var(--accent);">10.00</strong>
+                        Startverdi per aksje: <strong id="metricPerShareDisplay" style="font-size:1.2em; color:var(--accent);">10.00</strong> NOK
                     </div>
                 </div>
             </div>
             
             <div id="eps-inputs" style="display:none;">
-                <label>Earnings Per Share (EPS)</label>
-                <input type="number" id="epsValue" value="10.00">
+                <label for="epsValue">Earnings Per Share (EPS)</label>
+                <input type="number" id="epsValue" value="10.00" aria-label="EPS">
             </div>
         </div>
     </div>
@@ -164,28 +112,31 @@
         <div>
             <div class="card">
                 <div class="card-header">
-                    <h2>Verdsettelse (Forward DCF)</h2>
-                    <h3>5 år + Exit Multiple</h3>
+                    <h2>2. Verdsettelse (Forward DCF)</h2>
+                    <h3>Hva er aksjen verdt? (5 år + Exit)</h3>
                 </div>
 
                 <div class="grid-3">
                     <div class="scenario-box bear">
-                        <label>🐻 Bear</label>
-                        <input type="number" id="bearG" value="2" placeholder="Vekst %">
-                        <input type="number" id="bearM" value="10" placeholder="Exit x" style="margin-top:5px;">
-                        <input type="number" id="bearP" value="25" style="margin-top:5px;" placeholder="Sannsynlighet %">
+                        <label>🐻 Bear (Vekst / Exit)</label>
+                        <input type="number" id="bearG" value="2" placeholder="Vekst %" aria-label="Bear vekst">
+                        <input type="number" id="bearM" value="10" placeholder="Exit x" style="margin-top:5px;" aria-label="Bear exit">
+                        <label style="margin-top:5px;">Sannsynlighet %</label>
+                        <input type="number" id="bearP" value="25" aria-label="Bear sannsynlighet">
                     </div>
                     <div class="scenario-box base">
-                        <label>🔵 Base</label>
-                        <input type="number" id="baseG" value="8" placeholder="Vekst %">
-                        <input type="number" id="baseM" value="15" placeholder="Exit x" style="margin-top:5px;">
-                        <input type="number" id="baseP" value="50" style="margin-top:5px;" placeholder="Sannsynlighet %">
+                        <label>🔵 Base (Vekst / Exit)</label>
+                        <input type="number" id="baseG" value="8" placeholder="Vekst %" aria-label="Base vekst">
+                        <input type="number" id="baseM" value="15" placeholder="Exit x" style="margin-top:5px;" aria-label="Base exit">
+                        <label style="margin-top:5px;">Sannsynlighet %</label>
+                        <input type="number" id="baseP" value="50" aria-label="Base sannsynlighet">
                     </div>
                     <div class="scenario-box bull">
-                        <label>🐂 Bull</label>
-                        <input type="number" id="bullG" value="15" placeholder="Vekst %">
-                        <input type="number" id="bullM" value="20" placeholder="Exit x" style="margin-top:5px;">
-                        <input type="number" id="bullP" value="25" style="margin-top:5px;" placeholder="Sannsynlighet %">
+                        <label>🐂 Bull (Vekst / Exit)</label>
+                        <input type="number" id="bullG" value="15" placeholder="Vekst %" aria-label="Bull vekst">
+                        <input type="number" id="bullM" value="20" placeholder="Exit x" style="margin-top:5px;" aria-label="Bull exit">
+                        <label style="margin-top:5px;">Sannsynlighet %</label>
+                        <input type="number" id="bullP" value="25" aria-label="Bull sannsynlighet">
                     </div>
                 </div>
                 <small id="probWarning" style="color:red; display:block; text-align:right; min-height:1.2em;"></small>
@@ -193,7 +144,7 @@
                 <div style="margin-top: 15px; background: #f4f6f7; padding: 15px; border-radius: 8px;">
                     <div class="result-row">
                         <span>Estimert Verdi (Vektet):</span>
-                        <span class="result-val" id="valWeighted">---</span>
+                        <span class="result-val" id="valWeighted">--- NOK</span>
                     </div>
                     <div class="result-row" style="border-bottom:none;">
                         <span>Oppside / Nedside:</span>
@@ -201,7 +152,7 @@
                     </div>
                 </div>
                 <div style="height: 200px; margin-top:15px;">
-                    <canvas id="forwardChart"></canvas>
+                    <canvas id="forwardChart" aria-label="Forward valuations chart"></canvas>
                 </div>
             </div>
         </div>
@@ -209,14 +160,14 @@
         <div>
             <div class="card">
                 <div class="card-header">
-                    <h2>Forventninger (Reverse DCF)</h2>
-                    <h3>10 år + Gordon Growth</h3>
+                    <h2>3. Forventninger (Reverse DCF)</h2>
+                    <h3>Hva priser markedet inn? (10 år)</h3>
                 </div>
 
                 <div style="margin-bottom: 20px;">
-                    <label>Terminal Vekst (etter år 10)</label>
+                    <label for="termG">Terminal Vekst (etter år 10)</label>
                     <div style="display:flex; gap:10px; align-items:center;">
-                        <input type="number" id="termG" value="2.0" step="0.1" style="width:80px;"> 
+                        <input type="number" id="termG" value="2.0" step="0.1" style="width:80px;" aria-label="Terminal vekst"> 
                         <span style="font-size:0.9em; color:#666;">% (Evig vekst)</span>
                     </div>
                 </div>
@@ -224,219 +175,67 @@
                 <div class="reverse-box">
                     <div style="text-transform: uppercase; font-size: 0.8em; color: #888; letter-spacing: 1px;">Implisitt Vekstkrav</div>
                     <div class="implied-rate" id="revImplied">---%</div>
-                    <div style="font-size: 0.9em; color: #666;" id="revComment">Vekst markedet krever for å forsvare dagens kurs.</div>
+                    <div style="font-size: 0.9em; color: #666;" id="revComment">For å forsvare dagens kurs må selskapet vokse med denne raten årlig i 10 år.</div>
                 </div>
 
                 <div style="margin-top: 20px; padding: 15px; border: 1px solid #eee; border-radius: 8px;">
                     <div class="result-row" style="border:none; padding:0;">
-                        <span>Ditt Base Case:</span>
+                        <span>Ditt Base Case (til venstre):</span>
                         <span style="font-weight:bold;" id="dispBaseG">8%</span>
                     </div>
-                    <div style="margin-top:10px; font-size:0.9em; line-height:1.4em;" id="revVerdict">---</div>
+                    <div style="margin-top:10px; font-size:0.9em; line-height:1.4em;" id="revVerdict">
+                        ---
+                    </div>
                 </div>
 
-                <button class="calc-btn" onclick="calculateAll()">OPPDATER BEREGNINGER</button>
+                <button class="calc-btn" onclick="calculateAll()">OPPDATER ALLE TALL</button>
             </div>
         </div>
     </div>
-
-    <div class="card" id="summary-section" style="display:none;">
-        <h2>Data funnet i rapporten</h2>
-        <p style="font-size:0.9em; color:#666;">Tabellen viser de mest sannsynlige verdiene funnet i de første 30 sidene.</p>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Nøkkeltall</th>
-                    <th>Verdi funnet</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="summaryTableBody">
-                </tbody>
-        </table>
-    </div>
-
 </div>
 
 <script>
+    // State
     let chartFwd = null;
-    // Store found values to prevent overwriting with "0" or bad matches
-    let foundData = {
-        'Revenue': null,
-        'Gross Profit': null,
-        'Operating Profit': null,
-        'Net Profit': null,
-        'EPS': null,
-        'Free Cash Flow': null,
-        'Shares': null
-    };
+    let debounceTimer = null;
+    const fmt = new Intl.NumberFormat('nb-NO', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
+    // Utility: safe numeric read
+    function getNum(id) { return Number.parseFloat(document.getElementById(id).value) || 0; }
+
+    // Format number for display (NOK)
+    function formatN(n, decimals=2) {
+        if (!Number.isFinite(n)) return '---';
+        return new Intl.NumberFormat('nb-NO', { minimumFractionDigits: 0, maximumFractionDigits: decimals }).format(n);
+    }
+
+    // On load: bind listeners and initial calculations
     window.onload = function() {
+        updateLinks();
         toggleInputs();
         calculateAll();
-        setupDragDrop();
-        
-        document.querySelectorAll('input, select').forEach(el => {
-            if(el.type !== 'file') {
-                el.addEventListener('input', () => calculateAll());
-            }
+
+        // Debounced updates for inputs
+        const inputs = document.querySelectorAll('input, select');
+        inputs.forEach(el => {
+            el.addEventListener('input', () => {
+                if (el.id === 'ticker') {
+                    updateLinks();
+                    return;
+                }
+                // Debounce heavy calculation
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(calculateAll, 250);
+            });
         });
     };
 
-    function switchMode(mode) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        if(mode === 'manual') {
-            document.querySelector('.tab-btn:first-child').classList.add('active');
-            document.getElementById('auto-section').classList.add('hidden');
-            document.getElementById('summary-section').style.display = 'none';
-        } else {
-            document.querySelector('.tab-btn:last-child').classList.add('active');
-            document.getElementById('auto-section').classList.remove('hidden');
-            document.getElementById('summary-section').style.display = 'block';
-        }
+    function updateLinks() {
+        const t = (document.getElementById('ticker').value || 'EQNR').toUpperCase();
+        document.getElementById('link-fcf').href = `https://finance.yahoo.com/quote/${encodeURIComponent(t)}/cash-flow`;
+        document.getElementById('link-shares').href = `https://finance.yahoo.com/quote/${encodeURIComponent(t)}/key-statistics`;
     }
 
-    // --- PDF HANDLING (MEMORY SAFE) ---
-    function setupDragDrop() {
-        const zone = document.getElementById('drop-zone');
-        const input = document.getElementById('fileInput');
-
-        zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
-        zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-        zone.addEventListener('drop', (e) => {
-            e.preventDefault(); zone.classList.remove('dragover');
-            if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-        });
-        input.addEventListener('change', (e) => {
-            if(e.target.files.length) handleFile(e.target.files[0]);
-        });
-    }
-
-    function handleFile(file) {
-        if(file.type !== 'application/pdf') { alert("Vennligst last opp en PDF-fil."); return; }
-        document.getElementById('file-name').innerText = file.name;
-        // Reset found data
-        for (let key in foundData) foundData[key] = null;
-    }
-
-    async function processPDF() {
-        const fileInput = document.getElementById('fileInput');
-        const file = fileInput.files[0] || (document.getElementById('drop-zone').files ? document.getElementById('drop-zone').files[0] : null);
-
-        if (!file && document.getElementById('file-name').innerText === "Ingen fil valgt") {
-            alert("Last opp en fil først."); return;
-        }
-
-        const statusEl = document.getElementById('scan-status');
-        const progressContainer = document.getElementById('progress-container');
-        const progressBar = document.getElementById('progress-bar');
-        
-        statusEl.style.display = 'block';
-        progressContainer.style.display = 'block';
-        statusEl.innerText = "Initialiserer leser...";
-
-        const reader = new FileReader();
-        reader.onload = async function(e) {
-            const typedarray = new Uint8Array(e.target.result);
-            try {
-                const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                
-                // LIMIT: Scan max 30 pages to prevent crash
-                const maxPages = Math.min(pdf.numPages, 30); 
-                
-                for (let i = 1; i <= maxPages; i++) {
-                    statusEl.innerText = `Leser side ${i} av ${maxPages}...`;
-                    const percent = (i / maxPages) * 100;
-                    progressBar.style.width = percent + "%";
-
-                    const page = await pdf.getPage(i);
-                    const textContent = await page.getTextContent();
-                    const pageText = textContent.items.map(item => item.str).join(' ');
-                    
-                    // Analyze CHUNK immediately
-                    analyzeTextChunk(pageText);
-
-                    // Pause briefly to let UI update (prevents freeze)
-                    await new Promise(r => setTimeout(r, 10));
-                }
-                
-                statusEl.innerText = "Ferdig! Sjekk tabellen under.";
-                updateSummaryTable();
-                alert("Analyse ferdig. Sjekk tabellen og fyll inn dagens kurs manuelt.");
-
-            } catch (err) {
-                console.error(err);
-                statusEl.innerText = "Feil ved lesing.";
-                alert("Nettleseren gikk tom for minne eller filen er skadet. Prøv en mindre fil.");
-            }
-        };
-        reader.readAsArrayBuffer(file);
-    }
-
-    function analyzeTextChunk(text) {
-        const patterns = {
-            'Revenue': /(?:Revenue|Inntekter|Sales|Omsetning|Operating revenue)[\s\w\W]{0,40}?(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?)/i,
-            'Gross Profit': /(?:Gross Profit|Bruttofortjeneste)[\s\w\W]{0,40}?(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?)/i,
-            'Operating Profit': /(?:Operating Profit|Driftsresultat|EBIT|Operating income)[\s\w\W]{0,40}?(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?)/i,
-            'Net Profit': /(?:Net Profit|Net Income|Årsresultat|Nettoresultat|Profit for the year)[\s\w\W]{0,40}?(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?)/i,
-            'EPS': /(?:Earnings Per Share|EPS|Resultat per aksje|Diluted earnings per share)[\s\w\W]{0,40}?(\d{1,3}(?:[.,]\d+)?)/i,
-            'Free Cash Flow': /(?:Free Cash Flow|FCF|Fri kontantstrøm|Net cash flow from operating activities)[\s\w\W]{0,40}?(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?)/i,
-            'Shares': /(?:Weighted average shares|Antall aksjer|Shares outstanding)[\s\w\W]{0,50}?(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d+)?)/i
-        };
-
-        const parseFinNumber = (str) => {
-            if(!str) return 0;
-            let clean = str.replace(/\s/g, '');
-            // Simple heuristic for comma vs dot
-            if(clean.includes(',') && clean.includes('.')) {
-                if(clean.lastIndexOf(',') > clean.lastIndexOf('.')) clean = clean.replace(/\./g, '').replace(',', '.');
-                else clean = clean.replace(/,/g, '');
-            } else if(clean.includes(',')) {
-                 clean = clean.replace(',', '.');
-            }
-            return parseFloat(clean);
-        };
-
-        for (const [key, regex] of Object.entries(patterns)) {
-            // Only search if we haven't found a good candidate yet, OR if we want to overwrite with better data
-            // For stability, let's accumulate. 
-            // In a real app, we would weigh "Consolidated Statement" pages higher.
-            if (foundData[key] !== null) continue; // Skip if already found (Simplification)
-
-            const match = text.match(regex);
-            if (match && match[1]) {
-                const numericVal = parseFinNumber(match[1]);
-                if (numericVal > 0) { // Filter out zeros or bad reads
-                    foundData[key] = numericVal;
-                }
-            }
-        }
-        updateSummaryTable();
-    }
-
-    function updateSummaryTable() {
-        const summaryBody = document.getElementById('summaryTableBody');
-        summaryBody.innerHTML = "";
-        
-        for (const [key, val] of Object.entries(foundData)) {
-            let displayVal = val ? val.toLocaleString() : "Ikke funnet";
-            let status = val ? "✅" : "❌";
-            
-            // Auto-fill Inputs
-            if(val) {
-                if(key === 'Free Cash Flow') document.getElementById('totalFcf').value = val;
-                if(key === 'Shares') document.getElementById('shares').value = val;
-                if(key === 'EPS') document.getElementById('epsValue').value = val;
-            }
-
-            const row = `<tr><td>${key}</td><td>${displayVal}</td><td>${status}</td></tr>`;
-            summaryBody.innerHTML += row;
-        }
-        calculateAll();
-    }
-
-
-    // --- CALCULATION LOGIC (Standard) ---
     function toggleInputs() {
         const isFCF = document.getElementById('method').value === 'fcf';
         document.getElementById('fcf-inputs').style.display = isFCF ? 'grid' : 'none';
@@ -444,32 +243,49 @@
         calculateAll();
     }
 
-    function getNum(id) { return parseFloat(document.getElementById(id).value) || 0; }
-
+    // Main orchestration
     function calculateAll() {
+        // --- 1. STARTVERDI ---
         let startVal = 0;
         if (document.getElementById('method').value === 'fcf') {
             const fcf = getNum('totalFcf');
             const shares = getNum('shares');
-            if (shares > 0) startVal = fcf / shares;
+            if (shares > 0) startVal = (fcf / shares);
+            else startVal = NaN;
         } else {
             startVal = getNum('epsValue');
         }
-        document.getElementById('metricPerShareDisplay').innerText = startVal.toFixed(2);
+        document.getElementById('metricPerShareDisplay').innerText = Number.isFinite(startVal) ? formatN(startVal, 2) : '---';
 
         const price = getNum('currentPrice');
         const wacc = getNum('discountRate');
 
-        // Forward DCF
-        function calcFwd(g, m) {
+        // Input validations/warnings
+        const probSum = getNum('bearP') + getNum('baseP') + getNum('bullP');
+        const probWarningEl = document.getElementById('probWarning');
+        probWarningEl.innerText = Math.abs(probSum - 100) > 0.1 ? `⚠️ Sum % = ${formatN(probSum,1)}` : '';
+
+        if (!Number.isFinite(startVal) || startVal <= 0) {
+            probWarningEl.innerText = '⚠️ Startverdi ugyldig (sjekk FCF / Antall aksjer eller EPS)';
+        }
+
+        if (wacc <= 0) {
+            probWarningEl.innerText = '⚠️ Avkastningskrav (WACC) bør være > 0';
+        }
+
+        // --- 2. FORWARD DCF (5 År + Exit Multiple) ---
+        function calcFwd(gPercent, exitMultiple) {
+            // gPercent: yearly growth percent (e.g. 8), exitMultiple e.g. 15
+            if (!Number.isFinite(startVal) || startVal <= 0) return NaN;
             let val = 0, curr = startVal;
             let future = [];
-            for (let i=1; i<=5; i++) {
-                curr *= (1 + g/100);
-                val += curr / Math.pow(1 + wacc/100, i);
+            for (let i = 1; i <= 5; i++) {
+                curr *= (1 + gPercent / 100);
+                val += curr / Math.pow(1 + wacc / 100, i);
                 future.push(curr);
             }
-            let term = (future[4] * m) / Math.pow(1 + wacc/100, 5);
+            // Terminal by exit multiple
+            const term = (future[4] * exitMultiple) / Math.pow(1 + wacc / 100, 5);
             return val + term;
         }
 
@@ -477,71 +293,135 @@
         const baseVal = calcFwd(getNum('baseG'), getNum('baseM'));
         const bullVal = calcFwd(getNum('bullG'), getNum('bullM'));
 
-        const pSum = getNum('bearP') + getNum('baseP') + getNum('bullP');
-        document.getElementById('probWarning').innerText = Math.abs(pSum - 100) > 0.1 ? `⚠️ Sum % = ${pSum}` : "";
+        const wVal = ((bearVal || 0) * getNum('bearP') / 100) + ((baseVal || 0) * getNum('baseP') / 100) + ((bullVal || 0) * getNum('bullP') / 100);
 
-        const wVal = (bearVal * getNum('bearP')/100) + (baseVal * getNum('baseP')/100) + (bullVal * getNum('bullP')/100);
-        
-        document.getElementById('valWeighted').innerText = wVal.toFixed(2);
-        let upDown = price > 0 ? ((wVal - price)/price)*100 : 0;
+        // Update Forward UI
+        document.getElementById('valWeighted').innerText = Number.isFinite(wVal) ? formatN(wVal, 2) + " NOK" : '--- NOK';
+        let upDown = price > 0 && Number.isFinite(wVal) ? ((wVal - price) / price) * 100 : 0;
         const upEl = document.getElementById('valUpside');
-        upEl.innerText = (upDown > 0 ? "+" : "") + upDown.toFixed(1) + "%";
+        upEl.innerText = Number.isFinite(upDown) ? (upDown > 0 ? "+" : "") + upDown.toFixed(1) + "%" : '---';
         upEl.className = "result-val " + (upDown > 0 ? "undervalued" : "overvalued");
 
         updateChart(bearVal, baseVal, bullVal, wVal, price);
 
-        // Reverse DCF
+        // --- 3. REVERSE DCF (10 År + Gordon Growth) ---
         const termG = getNum('termG');
-        let impliedG = solveReverse(price, startVal, wacc, termG);
-        
-        document.getElementById('revImplied').innerText = price > 0 ? impliedG.toFixed(1) + "%" : "---%";
+
+        // Solver for Implied Growth (binary search with safeguards)
+        const impliedG = solveReverse(price, startVal, wacc, termG);
+
+        const revImpliedEl = document.getElementById('revImplied');
+        if (!Number.isFinite(impliedG)) {
+            revImpliedEl.innerText = 'Udefinert';
+            if (wacc <= termG) {
+                document.getElementById('probWarning').innerText = '⚠️ WACC må være større enn terminal vekst for å få et gyldig implisitt krav.';
+            }
+        } else {
+            revImpliedEl.innerText = impliedG.toFixed(1) + "%";
+        }
+
         document.getElementById('dispBaseG').innerText = getNum('baseG') + "%";
 
+        // Verdict - construct safe text nodes (avoid innerHTML with unescaped content)
         const verdictDiv = document.getElementById('revVerdict');
+        verdictDiv.innerHTML = '';
         const baseG = getNum('baseG');
-        
-        if (price > 0) {
-            if (impliedG > baseG + 2) verdictDiv.innerHTML = `<span style="color:#c0392b">⚠️ Markedet krever ${impliedG.toFixed(1)}% vekst (Høyt).</span>`;
-            else if (impliedG < baseG - 2) verdictDiv.innerHTML = `<span style="color:#27ae60">✅ Markedet krever kun ${impliedG.toFixed(1)}% vekst.</span>`;
-            else verdictDiv.innerHTML = `<span style="color:#f39c12">⚖️ Markedet er enig med deg.</span>`;
+
+        if (!Number.isFinite(impliedG)) {
+            const span = document.createElement('span');
+            span.className = 'warning';
+            span.textContent = 'Kan ikke beregne implisitt vekst: sjekk WACC og terminal vekst.';
+            verdictDiv.appendChild(span);
+        } else if (impliedG > baseG + 2) {
+            const span = document.createElement('span');
+            span.style.color = '#c0392b';
+            span.textContent = `⚠️ Høye forventninger: Markedet krever ${impliedG.toFixed(1)}% årlig vekst, mye høyere enn ditt Base Case (${baseG}%).`;
+            verdictDiv.appendChild(span);
+        } else if (impliedG < baseG - 2) {
+            const span = document.createElement('span');
+            span.style.color = '#27ae60';
+            span.textContent = `✅ Lav terskel: Markedet krever kun ${impliedG.toFixed(1)}% årlig vekst. Hvis du tror på ${baseG}%, kan dette være attraktivt.`;
+            verdictDiv.appendChild(span);
         } else {
-            verdictDiv.innerHTML = "Venter på aksjekurs...";
+            const span = document.createElement('span');
+            span.style.color = '#f39c12';
+            span.textContent = `⚖️ Fair: Markedets forventning (${impliedG.toFixed(1)}%) er omtrent lik ditt estimat (${baseG}%).`;
+            verdictDiv.appendChild(span);
         }
     }
 
-    function solveReverse(targetPrice, startVal, r, gTerm) {
-        if(targetPrice <= 0) return 0;
+    // Reverse DCF solver: find g such that PV(10-year cashflow + Gordon) ~= targetPrice (per share)
+    function solveReverse(targetPrice, startVal, rPercent, terminalGPercent) {
+        if (!Number.isFinite(targetPrice) || !Number.isFinite(startVal) || startVal <= 0) return NaN;
+        const r = rPercent;
+        const gTerm = terminalGPercent;
+
+        // If discount rate is <= terminal growth, Gordon formula would blow up (division by zero or negative). Bail out.
+        if (r <= gTerm) return NaN;
+
+        // Calculate PV for a given growth g (percent)
         function calcVal(g) {
+            // g is percent
             let val = 0, curr = startVal;
-            for(let i=1; i<=10; i++) {
-                curr *= (1 + g/100);
-                val += curr / Math.pow(1 + r/100, i);
+            for (let i = 1; i <= 10; i++) {
+                curr *= (1 + g / 100);
+                val += curr / Math.pow(1 + r / 100, i);
             }
-            if(r <= gTerm) return 999999; 
-            let termVal = (curr * (1 + gTerm/100)) / ((r - gTerm)/100);
-            return val + (termVal / Math.pow(1 + r/100, 10));
+            // Terminal (Gordon): use gTerm as perpetual growth (percent)
+            const termVal = (curr * (1 + gTerm / 100)) / ((r - gTerm) / 100);
+            return val + (termVal / Math.pow(1 + r / 100, 10));
         }
 
-        let low = -50, high = 100, mid = 0;
-        for(let i=0; i<50; i++) {
-            mid = (low+high)/2;
-            let v = calcVal(mid);
-            if(Math.abs(v - targetPrice) < 0.1) return mid;
-            if(v < targetPrice) low = mid; else high = mid;
+        // Start with reasonable bracket, expand if necessary
+        let low = -50, high = 100;
+        let vLow = calcVal(low), vHigh = calcVal(high);
+
+        // Expand limits if targetPrice outside initial bracket, up to some safety limit
+        let expandIter = 0;
+        while ((vLow > targetPrice && vHigh > targetPrice) || (vLow < targetPrice && vHigh < targetPrice)) {
+            expandIter++;
+            if (expandIter > 50) break; // safety
+            low -= 50;
+            high += 100;
+            vLow = calcVal(low);
+            vHigh = calcVal(high);
+        }
+
+        // Binary search for g
+        let mid = 0;
+        for (let i = 0; i < 80; i++) {
+            mid = (low + high) / 2;
+            const v = calcVal(mid);
+            if (!Number.isFinite(v)) break;
+            const diff = v - targetPrice;
+            if (Math.abs(diff) < Math.max(0.1, Math.abs(targetPrice) * 1e-6)) return mid;
+            if (v < targetPrice) {
+                low = mid;
+            } else {
+                high = mid;
+            }
         }
         return mid;
     }
 
+    // Chart update
     function updateChart(bear, base, bull, weighted, price) {
         const ctx = document.getElementById('forwardChart').getContext('2d');
         if (chartFwd) chartFwd.destroy();
+        const data = [
+            Number.isFinite(bear) ? bear : 0,
+            Number.isFinite(base) ? base : 0,
+            Number.isFinite(bull) ? bull : 0,
+            Number.isFinite(weighted) ? weighted : 0,
+            Number.isFinite(price) ? price : 0
+        ];
         chartFwd = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: ['Bear', 'Base', 'Bull', 'Vektet', 'Pris'],
                 datasets: [{
                     label: 'NOK',
-                    data: [bear, base, bull, weighted, price],
+                    data: data,
                     backgroundColor: ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#95a5a6'],
                     borderRadius: 4
                 }]
@@ -554,8 +434,6 @@
             }
         });
     }
-
-    function updateLinks() {} // Dummy
 </script>
 
 </body>
