@@ -3,239 +3,372 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Total DCF Dashboard</title>
+    <title>Investeringshjelpen (DCF Pro)</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
     <style>
-        :root { --primary: #2c3e50; --accent: #2980b9; --accent-rev: #8e44ad; --bg: #f4f7f6; --text: #333; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); padding: 20px; margin: 0; }
-        .container { max-width: 1200px; margin: 0 auto; }
+        :root { 
+            --primary: #2c3e50; 
+            --accent: #3498db; 
+            --accent-dark: #2980b9;
+            --bg: #f0f2f5; 
+            --text: #333; 
+            --success: #27ae60; 
+            --danger: #e74c3c; 
+            --warning: #f39c12; 
+            --card-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
         
-        /* Grid Layouts */
-        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; }
-        @media (max-width: 900px) { .dashboard-grid, .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: var(--text); padding: 20px; margin: 0; line-height: 1.6; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        /* Typography & Header */
+        h1 { text-align: center; color: var(--primary); margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #666; font-size: 0.9em; margin-bottom: 25px; }
+        h2 { margin: 0 0 15px 0; font-size: 1.3em; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        
+        /* Guide Section */
+        .guide-toggle { 
+            background: #fff; border: 2px solid var(--accent); color: var(--accent-dark); 
+            padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: bold; 
+            display: block; margin: 0 auto 20px auto; transition: 0.3s;
+        }
+        .guide-toggle:hover { background: var(--accent); color: white; }
+        
+        .guide-content { 
+            background: #e8f4fd; border: 1px solid #b6e0fe; padding: 20px; 
+            border-radius: 10px; margin-bottom: 25px; display: none; 
+        }
+        .guide-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 700px) { .guide-grid { grid-template-columns: 1fr; } }
 
         /* Cards */
-        .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .card-header { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        h2 { margin: 0; font-size: 1.2em; color: var(--primary); }
-        h3 { margin: 0; font-size: 1em; color: #666; font-weight: normal; }
-
-        /* Inputs */
-        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.85em; color: var(--primary); }
-        input[type="number"], input[type="text"], select {
-            width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95em; box-sizing: border-box;
-        }
-        input:focus { outline: 2px solid var(--accent); border-color: transparent; }
-
-        /* Help links */
-        .help-link { font-size: 0.75em; color: var(--accent); text-decoration: none; display: block; margin-top: 2px; }
-        .help-link:hover { text-decoration: underline; }
-
-        .scenario-box { padding: 10px; border-radius: 6px; border: 1px solid #eee; background: #fafafa; margin-bottom: 10px; }
-        .bear { border-left: 4px solid #e74c3c; } .base { border-left: 4px solid #3498db; } .bull { border-left: 4px solid #2ecc71; }
+        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: var(--card-shadow); margin-bottom: 20px; transition: transform 0.2s; }
         
-        .reverse-box { background: #fdf2ff; border: 1px solid #e8daef; border-radius: 8px; padding: 20px; text-align: center; }
-        .implied-rate { font-size: 2.5em; font-weight: bold; color: var(--accent-rev); margin: 10px 0; }
-        
-        .result-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #f0f0f0; }
-        .result-val { font-weight: bold; font-size: 1.1em; }
-        .undervalued { color: #27ae60; } .overvalued { color: #c0392b; }
-
-        button.calc-btn {
-            background: var(--primary); color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; cursor: pointer; font-weight: bold; margin-top: 10px;
+        /* Tabs */
+        .tab-container { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+        .tab-btn { 
+            background: #e0e0e0; border: none; padding: 12px 30px; cursor: pointer; 
+            border-radius: 25px; font-weight: bold; color: #555; transition: 0.2s; 
         }
-        button.calc-btn:hover { background: #34495e; }
+        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); }
+        
+        /* Inputs & Tooltips */
+        .input-group { margin-bottom: 15px; position: relative; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; color: var(--primary); }
+        input[type="number"], input[type="text"], select { 
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1em; box-sizing: border-box; transition: border 0.3s;
+        }
+        input:focus { outline: none; border-color: var(--accent); }
+        .highlight-input { border: 2px solid var(--accent) !important; background-color: #fafdff; }
 
-        .warning { color: #c0392b; font-weight: 600; }
-        .muted { color: #666; font-size: 0.9em; }
+        /* Tooltip Icon */
+        .info-icon {
+            display: inline-block; width: 18px; height: 18px; background: #ddd; color: #555;
+            border-radius: 50%; text-align: center; line-height: 18px; font-size: 0.8em;
+            cursor: help; margin-left: 5px; position: relative;
+        }
+        .info-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
+            background: #333; color: white; padding: 8px 12px; borderRadius: 6px;
+            font-size: 0.85em; width: 200px; z-index: 100; font-weight: normal; line-height: 1.4;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        /* Upload Zone */
+        .upload-zone { border: 2px dashed #ccc; padding: 30px; text-align: center; border-radius: 10px; background: #fafafa; transition: 0.3s; margin-bottom: 15px; cursor: pointer; }
+        .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: #f0f8ff; }
+
+        /* Grids */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; }
+        @media (max-width: 900px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+        /* Scenario Styling */
+        .scenario-box { padding: 15px; border-radius: 8px; border: 1px solid #eee; background: #fafafa; display: flex; flex-direction: column; justify-content: space-between; }
+        .bear { border-top: 4px solid var(--danger); }
+        .base { border-top: 4px solid var(--accent); background: #fdfdfd; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .bull { border-top: 4px solid var(--success); }
+        
+        .scenario-result {
+            margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.1);
+            text-align: center; font-weight: bold; font-size: 1.1em;
+        }
+        
+        /* Buttons */
+        .btn { border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; width: 100%; font-size: 1em; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* Results */
+        .result-box { text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px; margin-top: 10px; }
+        .verdict-text { font-size: 1.1em; margin-top: 10px; line-height: 1.5; font-weight: 500; }
+        .price-large { font-size: 2em; font-weight: bold; margin: 5px 0; }
+        .status-badge { display: inline-block; padding: 5px 12px; border-radius: 15px; font-size: 0.9em; font-weight: bold; color: white; margin-bottom: 10px;}
+
+        .hidden { display: none !important; }
+        
+        /* Table */
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.9em; margin-top: 15px;}
+        .data-table td, .data-table th { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+        .data-table th { color: #666; font-weight: 600; }
+        
+        #progress-bar { width: 0%; height: 6px; background: var(--success); transition: width 0.3s; margin-top: 10px; border-radius: 3px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     
+    <h1>Investeringshjelpen</h1>
+    <p class="subtitle">Er aksjen billig eller dyr? En enkel analysehjelper.</p>
+
+    <button class="guide-toggle" onclick="toggleGuide()">❓ Nybegynner? Klikk her for veiledning</button>
+    
+    <div id="guide-content" class="guide-content">
+        <h3>Slik bruker du verktøyet:</h3>
+        <p>Dette verktøyet hjelper deg å finne "riktig pris" på et selskap ved å se på hvor mye penger de tjener (kontantstrøm). Vi bruker to metoder samtidig:</p>
+        <div class="guide-grid">
+            <div>
+                <strong>1. Verdsettelse (Forward DCF)</strong>
+                <p>Her gjetter vi på fremtiden. Du legger inn hvor mye du tror selskapet vil vokse. Appen forteller deg hva aksjen bør koste i dag basert på dine gjetninger.</p>
+                <ul>
+                    <li>Resultat > Dagens kurs = <span style="color:green; font-weight:bold;">BILLIG (Kjøp)</span></li>
+                    <li>Resultat < Dagens kurs = <span style="color:red; font-weight:bold;">DYR (Vent)</span></li>
+                </ul>
+            </div>
+            <div>
+                <strong>2. Forventninger (Reverse DCF)</strong>
+                <p>Her ser vi på hva markedet tror. Appen regner "baklengs" fra dagens aksjekurs.</p>
+                <ul>
+                    <li>Implisitt vekst er <strong>høyere</strong> enn du tror er realistisk = <span style="color:red; font-weight:bold;">DYR</span></li>
+                    <li>Implisitt vekst er <strong>lavere</strong> enn du tror = <span style="color:green; font-weight:bold;">BILLIG</span> (Markedet er pessimistisk)</li>
+                </ul>
+            </div>
+        </div>
+        <p style="margin-top:15px; font-size:0.9em; color:#555;"><em>Tips: Vær heller litt konservativ (pessimistisk) i dine anslag. Det er bedre å bli positivt overrasket!</em></p>
+    </div>
+
+    <div class="tab-container">
+        <button id="tab-manual" class="tab-btn active" onclick="switchMode('manual')">Manuell Inntasting</button>
+        <button id="tab-auto" class="tab-btn" onclick="switchMode('auto')">Last opp Rapport (PDF)</button>
+    </div>
+
+    <div id="auto-section" class="card hidden">
+        <h2>📂 Last opp Årsrapport / Kvartalsrapport</h2>
+        <p style="color:#666; font-size:0.9em; margin-bottom:20px;">Last opp PDF-filen fra selskapet. Vi finner tallene, konverterer valuta og fyller ut skjemaet for deg.</p>
+        
+        <div class="upload-zone" id="drop-zone" onclick="document.getElementById('fileInput').click()">
+            <p style="margin:0; font-size:1.1em; font-weight:500;">Klikk for å velge fil (PDF)</p>
+            <p style="margin:5px 0 0 0; font-size:0.8em; color:#888;">eller dra og slipp her</p>
+            <input type="file" id="fileInput" accept=".pdf" style="display:none;">
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong id="file-name" style="color:var(--primary);">Ingen fil valgt</strong>
+            <div>
+                <button id="btn-scan" class="btn btn-success" style="width:auto;" onclick="processPDF()">🔍 Start Analyse</button>
+                <button id="btn-cancel" class="btn btn-danger hidden" style="width:auto;" onclick="cancelScan()">Avbryt</button>
+            </div>
+        </div>
+        
+        <div id="scan-status" style="margin-top:10px; color:var(--accent-dark); font-weight:bold; display:none;">Klar.</div>
+        <div id="progress-bar"></div>
+
+        <div id="currency-control" class="hidden" style="margin-top:20px; padding-top:20px; border-top:1px solid #eee;">
+            <h4 style="margin:0 0 10px 0;">🌍 Valutajustering</h4>
+            <div class="grid-3">
+                <div class="input-group">
+                    <label>Rapportvaluta</label>
+                    <input type="text" id="reportCurrency" value="USD" readonly style="background:#eee;">
+                </div>
+                <div class="input-group">
+                    <label>Noteringsvaluta</label>
+                    <input type="text" id="listingCurrency" value="NOK">
+                </div>
+                <div class="input-group">
+                    <label>Vekslingskurs <span class="info-icon" data-tooltip="Hvor mye koster 1 enhet av rapportvalutaen i noteringsvalutaen? F.eks USDNOK = 11.0">ℹ️</span></label>
+                    <input type="number" id="fxRate" value="1.0" step="0.01" oninput="updateFxCalculation()">
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
-        <div class="card-header">
-            <h2>1. Felles Input (Hent tall én gang)</h2>
-            <select id="method" style="width: auto;" onchange="toggleInputs()" aria-label="Velg metode">
-                <option value="fcf">Metode: Free Cash Flow</option>
-                <option value="eps">Metode: EPS</option>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:20px;">
+            <h2 style="border:none; margin:0; padding:0;">1. Nøkkeltall</h2>
+            <select id="method" style="width: auto; padding:8px;" onchange="toggleInputs()">
+                <option value="fcf">Metode: Free Cash Flow (Anbefalt)</option>
+                <option value="eps">Metode: EPS (Enkelt)</option>
             </select>
         </div>
         
         <div class="grid-4">
-            <div>
-                <label for="ticker">Ticker / Selskap</label>
-                <input type="text" id="ticker" placeholder="EQNR" oninput="updateLinks()" aria-label="Ticker">
+            <div class="input-group">
+                <label>Ticker / Navn</label>
+                <input type="text" id="ticker" placeholder="F.eks. EQNR">
             </div>
-            <div>
-                <label for="currentPrice">Aksjekurs (NOK)</label>
-                <input type="number" id="currentPrice" value="150" step="0.1" aria-label="Aksjekurs">
+            <div class="input-group">
+                <label>Dagens Aksjekurs <span class="info-icon" data-tooltip="Hva koster aksjen akkurat nå?">ℹ️</span></label>
+                <input type="number" id="currentPrice" placeholder="Må fylles ut" step="0.1" class="highlight-input">
             </div>
-            <div>
-                <label for="discountRate">Avkastningskrav (WACC %)</label>
-                <input type="number" id="discountRate" value="10.0" step="0.1" aria-label="Avkastningskrav">
+            <div class="input-group">
+                <label>Avkastningskrav % <span class="info-icon" data-tooltip="Hvor mye avkastning krever du? Normalt: 10%. Trygt selskap: 6-8%. Risikabelt: 12-15%.">ℹ️</span></label>
+                <input type="number" id="discountRate" value="10.0" step="0.5">
             </div>
-            <div>
-                <label for="shares">Antall Aksjer (Mill)</label>
-                <input type="number" id="shares" value="100" aria-label="Antall aksjer">
-                <a id="link-shares" href="#" target="_blank" class="help-link">Finn antall aksjer</a>
+            <div class="input-group">
+                <label>Antall Aksjer (Mill)</label>
+                <input type="number" id="shares" value="100">
             </div>
         </div>
 
-        <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+        <div style="background:#f8f9fa; padding:15px; border-radius:8px; margin-top:10px;">
             <div id="fcf-inputs" class="grid-2">
-                <div>
-                    <label for="totalFcf">Total Free Cash Flow (Siste 12 mnd, Mill NOK)</label>
-                    <input type="number" id="totalFcf" value="1000" aria-label="Total FCF">
-                    <a id="link-fcf" href="#" target="_blank" class="help-link">Finn Cash Flow (Yahoo)</a>
+                <div class="input-group" style="margin:0;">
+                    <label>Total Free Cash Flow (Mill) <span class="info-icon" data-tooltip="Penger selskapet sitter igjen med etter alle utgifter. Også kalt 'Eierinntekt'.">ℹ️</span></label>
+                    <input type="number" id="totalFcf" value="1000">
                 </div>
-                <div style="display:flex; align-items:center;">
-                    <div style="background:#f8f9fa; padding:10px; border-radius:6px; width:100%;">
-                        Startverdi per aksje: <strong id="metricPerShareDisplay" style="font-size:1.2em; color:var(--accent);">10.00</strong> NOK
-                    </div>
+                <div style="display:flex; align-items:flex-end;">
+                    <div style="font-size:0.9em; color:#666;">Startverdi per aksje: <strong id="metricPerShareDisplay" style="color:var(--accent-dark); font-size:1.2em;">10.00</strong></div>
                 </div>
             </div>
             
             <div id="eps-inputs" style="display:none;">
-                <label for="epsValue">Earnings Per Share (EPS)</label>
-                <input type="number" id="epsValue" value="10.00" aria-label="EPS">
+                <label>Earnings Per Share (EPS)</label>
+                <input type="number" id="epsValue" value="10.00">
             </div>
+        </div>
+        
+        <div id="summary-section" class="hidden" style="margin-top:20px;">
+            <h4 style="margin-bottom:5px;">Funnet i PDF:</h4>
+            <table class="data-table">
+                <tbody id="summaryTableBody"></tbody>
+            </table>
         </div>
     </div>
 
     <div class="dashboard-grid">
         
-        <div>
-            <div class="card">
-                <div class="card-header">
-                    <h2>2. Verdsettelse (Forward DCF)</h2>
-                    <h3>Hva er aksjen verdt? (5 år + Exit)</h3>
+        <div class="card">
+            <h2>2. Verdsettelse (Hva er den verdt?)</h2>
+            <p style="font-size:0.85em; color:#666; margin-bottom:15px;">Estimer vekst de neste 5 årene. Vær konservativ.</p>
+            
+            <div class="grid-3">
+                <div class="scenario-box bear">
+                    <label style="color:var(--danger);">🐻 Pessimistisk</label>
+                    <div class="input-group"><input type="number" id="bearG" value="2"><small>Vekst %</small></div>
+                    <div class="input-group"><input type="number" id="bearM" value="10"><small>Exit x</small></div>
+                    <div class="input-group"><input type="number" id="bearP" value="25"><small>Sannsynlighet %</small></div>
+                    <div class="scenario-result" style="color:var(--danger);">Verdi: <span id="dispBear">---</span></div>
                 </div>
-
-                <div class="grid-3">
-                    <div class="scenario-box bear">
-                        <label>🐻 Bear (Vekst / Exit)</label>
-                        <input type="number" id="bearG" value="2" placeholder="Vekst %" aria-label="Bear vekst">
-                        <input type="number" id="bearM" value="10" placeholder="Exit x" style="margin-top:5px;" aria-label="Bear exit">
-                        <label style="margin-top:5px;">Sannsynlighet %</label>
-                        <input type="number" id="bearP" value="25" aria-label="Bear sannsynlighet">
-                    </div>
-                    <div class="scenario-box base">
-                        <label>🔵 Base (Vekst / Exit)</label>
-                        <input type="number" id="baseG" value="8" placeholder="Vekst %" aria-label="Base vekst">
-                        <input type="number" id="baseM" value="15" placeholder="Exit x" style="margin-top:5px;" aria-label="Base exit">
-                        <label style="margin-top:5px;">Sannsynlighet %</label>
-                        <input type="number" id="baseP" value="50" aria-label="Base sannsynlighet">
-                    </div>
-                    <div class="scenario-box bull">
-                        <label>🐂 Bull (Vekst / Exit)</label>
-                        <input type="number" id="bullG" value="15" placeholder="Vekst %" aria-label="Bull vekst">
-                        <input type="number" id="bullM" value="20" placeholder="Exit x" style="margin-top:5px;" aria-label="Bull exit">
-                        <label style="margin-top:5px;">Sannsynlighet %</label>
-                        <input type="number" id="bullP" value="25" aria-label="Bull sannsynlighet">
-                    </div>
+                <div class="scenario-box base">
+                    <label style="color:var(--accent-dark);">🔵 Realistisk</label>
+                    <div class="input-group"><input type="number" id="baseG" value="8"><small>Vekst %</small></div>
+                    <div class="input-group"><input type="number" id="baseM" value="15"><small>Exit x</small></div>
+                    <div class="input-group"><input type="number" id="baseP" value="50"><small>Sannsynlighet %</small></div>
+                    <div class="scenario-result" style="color:var(--accent-dark);">Verdi: <span id="dispBase">---</span></div>
                 </div>
-                <small id="probWarning" style="color:red; display:block; text-align:right; min-height:1.2em;"></small>
-
-                <div style="margin-top: 15px; background: #f4f6f7; padding: 15px; border-radius: 8px;">
-                    <div class="result-row">
-                        <span>Estimert Verdi (Vektet):</span>
-                        <span class="result-val" id="valWeighted">--- NOK</span>
-                    </div>
-                    <div class="result-row" style="border-bottom:none;">
-                        <span>Oppside / Nedside:</span>
-                        <span class="result-val" id="valUpside">---%</span>
-                    </div>
-                </div>
-                <div style="height: 200px; margin-top:15px;">
-                    <canvas id="forwardChart" aria-label="Forward valuations chart"></canvas>
+                <div class="scenario-box bull">
+                    <label style="color:var(--success);">🐂 Optimistisk</label>
+                    <div class="input-group"><input type="number" id="bullG" value="15"><small>Vekst %</small></div>
+                    <div class="input-group"><input type="number" id="bullM" value="20"><small>Exit x</small></div>
+                    <div class="input-group"><input type="number" id="bullP" value="25"><small>Sannsynlighet %</small></div>
+                    <div class="scenario-result" style="color:var(--success);">Verdi: <span id="dispBull">---</span></div>
                 </div>
             </div>
+            
+            <div style="text-align:right; font-size:0.8em; color:var(--danger); margin-bottom:10px;" id="probWarning"></div>
+
+            <div class="result-box">
+                <small>DIN ESTMERTE VERDI</small>
+                <div class="price-large" id="valWeighted">---</div>
+                <div id="valUpsideBadge" class="status-badge" style="background:#ccc;">Venter...</div>
+                <div class="verdict-text" id="forwardVerdict">Fyll inn dagens kurs for å se resultatet.</div>
+            </div>
+            <div style="height: 180px; margin-top:15px;"><canvas id="forwardChart"></canvas></div>
         </div>
 
-        <div>
-            <div class="card">
-                <div class="card-header">
-                    <h2>3. Forventninger (Reverse DCF)</h2>
-                    <h3>Hva priser markedet inn? (10 år)</h3>
+        <div class="card">
+            <h2>3. Markedets Forventning</h2>
+            <p style="font-size:0.85em; color:#666; margin-bottom:15px;">Hva tror markedet? (Reverse DCF)</p>
+            
+            <div class="input-group" style="max-width:200px;">
+                <label>Terminal Vekst <span class="info-icon" data-tooltip="Evig vekst etter år 10. Bør ikke være høyere enn inflasjon/BNP (2-3%).">ℹ️</span></label>
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <input type="number" id="termG" value="2.5" step="0.1"> <span>%</span>
                 </div>
-
-                <div style="margin-bottom: 20px;">
-                    <label for="termG">Terminal Vekst (etter år 10)</label>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <input type="number" id="termG" value="2.0" step="0.1" style="width:80px;" aria-label="Terminal vekst"> 
-                        <span style="font-size:0.9em; color:#666;">% (Evig vekst)</span>
-                    </div>
-                </div>
-
-                <div class="reverse-box">
-                    <div style="text-transform: uppercase; font-size: 0.8em; color: #888; letter-spacing: 1px;">Implisitt Vekstkrav</div>
-                    <div class="implied-rate" id="revImplied">---%</div>
-                    <div style="font-size: 0.9em; color: #666;" id="revComment">For å forsvare dagens kurs må selskapet vokse med denne raten årlig i 10 år.</div>
-                </div>
-
-                <div style="margin-top: 20px; padding: 15px; border: 1px solid #eee; border-radius: 8px;">
-                    <div class="result-row" style="border:none; padding:0;">
-                        <span>Ditt Base Case (til venstre):</span>
-                        <span style="font-weight:bold;" id="dispBaseG">8%</span>
-                    </div>
-                    <div style="margin-top:10px; font-size:0.9em; line-height:1.4em;" id="revVerdict">
-                        ---
-                    </div>
-                </div>
-
-                <button class="calc-btn" onclick="calculateAll()">OPPDATER ALLE TALL</button>
             </div>
+
+            <div class="reverse-box" style="margin-top:20px;">
+                <small>FOR Å FORSVARE DAGENS KURS MÅ SELSKAPET VOKSE:</small>
+                <div class="implied-rate" id="revImplied">---%</div>
+                <small>HVERT ÅR I 10 ÅR</small>
+            </div>
+
+            <div class="result-box" style="background:white; border:1px solid #eee;">
+                <div style="font-weight:bold; color:#666; font-size:0.9em;">SAMMENLIGNING:</div>
+                <p>Du tror på: <strong id="dispBaseG" style="color:var(--accent-dark);">8%</strong> vekst.</p>
+                <div class="verdict-text" id="revVerdict">---</div>
+            </div>
+            
+            <button class="btn btn-primary" style="margin-top:20px;" onclick="calculateAll()">🔄 Oppdater Beregninger</button>
         </div>
     </div>
+
 </div>
 
 <script>
-    // State
+    // --- STATE VARIABLES ---
     let chartFwd = null;
-    let debounceTimer = null;
-    const fmt = new Intl.NumberFormat('nb-NO', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    let isScanning = false;
+    let abortScan = false;
+    let foundData = { 'Revenue': null, 'Gross Profit': null, 'Operating Profit': null, 'Net Profit': null, 'EPS': null, 'Free Cash Flow': null, 'Shares': null };
 
-    // Utility: safe numeric read
-    function getNum(id) { return Number.parseFloat(document.getElementById(id).value) || 0; }
-
-    // Format number for display (NOK)
-    function formatN(n, decimals=2) {
-        if (!Number.isFinite(n)) return '---';
-        return new Intl.NumberFormat('nb-NO', { minimumFractionDigits: 0, maximumFractionDigits: decimals }).format(n);
-    }
-
-    // On load: bind listeners and initial calculations
+    // --- INITIALIZATION ---
     window.onload = function() {
-        updateLinks();
         toggleInputs();
         calculateAll();
-
-        // Debounced updates for inputs
-        const inputs = document.querySelectorAll('input, select');
-        inputs.forEach(el => {
-            el.addEventListener('input', () => {
-                if (el.id === 'ticker') {
-                    updateLinks();
-                    return;
-                }
-                // Debounce heavy calculation
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(calculateAll, 250);
-            });
+        setupDragDrop();
+        
+        // Live calculation listeners
+        document.querySelectorAll('input, select').forEach(el => {
+            if(el.type !== 'file') el.addEventListener('input', () => calculateAll());
         });
     };
 
-    function updateLinks() {
-        const t = (document.getElementById('ticker').value || 'EQNR').toUpperCase();
-        document.getElementById('link-fcf').href = `https://finance.yahoo.com/quote/${encodeURIComponent(t)}/cash-flow`;
-        document.getElementById('link-shares').href = `https://finance.yahoo.com/quote/${encodeURIComponent(t)}/key-statistics`;
+    function toggleGuide() {
+        const content = document.getElementById('guide-content');
+        content.style.display = content.style.display === 'block' ? 'none' : 'block';
     }
 
+    // --- TABS & MODES ---
+    function switchMode(mode) {
+        const btnMan = document.getElementById('tab-manual');
+        const btnAuto = document.getElementById('tab-auto');
+        const secAuto = document.getElementById('auto-section');
+        const secSum = document.getElementById('summary-section');
+
+        if(mode === 'manual') {
+            btnMan.classList.add('active'); btnAuto.classList.remove('active');
+            secAuto.classList.add('hidden'); secSum.classList.add('hidden');
+        } else {
+            btnMan.classList.remove('active'); btnAuto.classList.add('active');
+            secAuto.classList.remove('hidden'); secSum.classList.remove('hidden');
+        }
+    }
+
+    // --- CALCULATION LOGIC (The Brain) ---
+    function getNum(id) { return parseFloat(document.getElementById(id).value) || 0; }
+    
     function toggleInputs() {
         const isFCF = document.getElementById('method').value === 'fcf';
         document.getElementById('fcf-inputs').style.display = isFCF ? 'grid' : 'none';
@@ -243,196 +376,245 @@
         calculateAll();
     }
 
-    // Main orchestration
     function calculateAll() {
-        // --- 1. STARTVERDI ---
+        // 1. Calculate Start Metric
         let startVal = 0;
         if (document.getElementById('method').value === 'fcf') {
             const fcf = getNum('totalFcf');
             const shares = getNum('shares');
-            if (shares > 0) startVal = (fcf / shares);
-            else startVal = NaN;
-        } else {
-            startVal = getNum('epsValue');
-        }
-        document.getElementById('metricPerShareDisplay').innerText = Number.isFinite(startVal) ? formatN(startVal, 2) : '---';
-
+            if(shares > 0) startVal = fcf / shares;
+        } else { startVal = getNum('epsValue'); }
+        
+        document.getElementById('metricPerShareDisplay').innerText = startVal.toFixed(2);
+        
         const price = getNum('currentPrice');
         const wacc = getNum('discountRate');
 
-        // Input validations/warnings
-        const probSum = getNum('bearP') + getNum('baseP') + getNum('bullP');
-        const probWarningEl = document.getElementById('probWarning');
-        probWarningEl.innerText = Math.abs(probSum - 100) > 0.1 ? `⚠️ Sum % = ${formatN(probSum,1)}` : '';
-
-        if (!Number.isFinite(startVal) || startVal <= 0) {
-            probWarningEl.innerText = '⚠️ Startverdi ugyldig (sjekk FCF / Antall aksjer eller EPS)';
+        // --- FORWARD DCF CALCULATION ---
+        function calcScenario(g, m) {
+            let v=0, c=startVal, arr=[];
+            for(let i=1;i<=5;i++){ c*=(1+g/100); v+=c/Math.pow(1+wacc/100,i); arr.push(c); }
+            return v + ((arr[4]*m)/Math.pow(1+wacc/100,5));
         }
+        
+        const bearVal = calcScenario(getNum('bearG'), getNum('bearM'));
+        const baseVal = calcScenario(getNum('baseG'), getNum('baseM'));
+        const bullVal = calcScenario(getNum('bullG'), getNum('bullM'));
+        
+        // Oppdater individuelle summer
+        document.getElementById('dispBear').innerText = bearVal.toFixed(2) + " NOK";
+        document.getElementById('dispBase').innerText = baseVal.toFixed(2) + " NOK";
+        document.getElementById('dispBull').innerText = bullVal.toFixed(2) + " NOK";
 
-        if (wacc <= 0) {
-            probWarningEl.innerText = '⚠️ Avkastningskrav (WACC) bør være > 0';
-        }
+        const pBear = getNum('bearP'), pBase = getNum('baseP'), pBull = getNum('bullP');
+        const wVal = (bearVal*pBear/100) + (baseVal*pBase/100) + (bullVal*pBull/100);
+        
+        // Probability Warning
+        const pSum = pBear + pBase + pBull;
+        document.getElementById('probWarning').innerText = Math.abs(pSum - 100) > 0.1 ? `⚠️ Summen av sannsynligheter er ${pSum}% (må være 100%)` : "";
 
-        // --- 2. FORWARD DCF (5 År + Exit Multiple) ---
-        function calcFwd(gPercent, exitMultiple) {
-            // gPercent: yearly growth percent (e.g. 8), exitMultiple e.g. 15
-            if (!Number.isFinite(startVal) || startVal <= 0) return NaN;
-            let val = 0, curr = startVal;
-            let future = [];
-            for (let i = 1; i <= 5; i++) {
-                curr *= (1 + gPercent / 100);
-                val += curr / Math.pow(1 + wacc / 100, i);
-                future.push(curr);
+        // --- UPDATE FORWARD UI ---
+        document.getElementById('valWeighted').innerText = wVal.toFixed(2);
+        
+        const fwdBadge = document.getElementById('valUpsideBadge');
+        const fwdText = document.getElementById('forwardVerdict');
+        
+        if(price > 0) {
+            const diff = ((wVal - price) / price) * 100;
+            const prefix = diff > 0 ? "+" : "";
+            
+            if(diff > 15) {
+                fwdBadge.style.background = "var(--success)"; 
+                fwdBadge.innerText = `${prefix}${diff.toFixed(1)}% (Undervurdert)`;
+                fwdText.innerHTML = "✅ <strong>Kjøpskandidat!</strong> Aksjen ser betydelig billigere ut enn din beregnede verdi.";
+            } else if (diff > 0) {
+                fwdBadge.style.background = "var(--success)"; 
+                fwdBadge.innerText = `${prefix}${diff.toFixed(1)}% (Litt Billig)`;
+                fwdText.innerHTML = "✅ <strong>Positivt.</strong> Aksjen handles litt under verdi, men ha litt sikkerhetsmargin.";
+            } else if (diff > -15) {
+                fwdBadge.style.background = "var(--warning)"; 
+                fwdBadge.innerText = `${diff.toFixed(1)}% (Litt Dyr)`;
+                fwdText.innerHTML = "⚠️ <strong>Nøytral/Dyr.</strong> Prisen er litt høyere enn din verdi. Kanskje vente?";
+            } else {
+                fwdBadge.style.background = "var(--danger)"; 
+                fwdBadge.innerText = `${diff.toFixed(1)}% (Overvurdert)`;
+                fwdText.innerHTML = "❌ <strong>Dyr!</strong> Markedet er mye mer optimistisk enn dine tall tilsier. Høy risiko.";
             }
-            // Terminal by exit multiple
-            const term = (future[4] * exitMultiple) / Math.pow(1 + wacc / 100, 5);
-            return val + term;
+        } else {
+            fwdBadge.innerText = "Mangler kurs"; fwdBadge.style.background = "#ccc";
         }
-
-        const bearVal = calcFwd(getNum('bearG'), getNum('bearM'));
-        const baseVal = calcFwd(getNum('baseG'), getNum('baseM'));
-        const bullVal = calcFwd(getNum('bullG'), getNum('bullM'));
-
-        const wVal = ((bearVal || 0) * getNum('bearP') / 100) + ((baseVal || 0) * getNum('baseP') / 100) + ((bullVal || 0) * getNum('bullP') / 100);
-
-        // Update Forward UI
-        document.getElementById('valWeighted').innerText = Number.isFinite(wVal) ? formatN(wVal, 2) + " NOK" : '--- NOK';
-        let upDown = price > 0 && Number.isFinite(wVal) ? ((wVal - price) / price) * 100 : 0;
-        const upEl = document.getElementById('valUpside');
-        upEl.innerText = Number.isFinite(upDown) ? (upDown > 0 ? "+" : "") + upDown.toFixed(1) + "%" : '---';
-        upEl.className = "result-val " + (upDown > 0 ? "undervalued" : "overvalued");
-
+        
         updateChart(bearVal, baseVal, bullVal, wVal, price);
 
-        // --- 3. REVERSE DCF (10 År + Gordon Growth) ---
+        // --- REVERSE DCF CALCULATION ---
         const termG = getNum('termG');
-
-        // Solver for Implied Growth (binary search with safeguards)
-        const impliedG = solveReverse(price, startVal, wacc, termG);
-
-        const revImpliedEl = document.getElementById('revImplied');
-        if (!Number.isFinite(impliedG)) {
-            revImpliedEl.innerText = 'Udefinert';
-            if (wacc <= termG) {
-                document.getElementById('probWarning').innerText = '⚠️ WACC må være større enn terminal vekst for å få et gyldig implisitt krav.';
-            }
-        } else {
-            revImpliedEl.innerText = impliedG.toFixed(1) + "%";
-        }
-
+        let impG = solveRev(price, startVal, wacc, termG);
+        
+        document.getElementById('revImplied').innerText = price>0 ? impG.toFixed(1)+"%" : "---%";
         document.getElementById('dispBaseG').innerText = getNum('baseG') + "%";
-
-        // Verdict - construct safe text nodes (avoid innerHTML with unescaped content)
-        const verdictDiv = document.getElementById('revVerdict');
-        verdictDiv.innerHTML = '';
+        
+        const revDiv = document.getElementById('revVerdict');
         const baseG = getNum('baseG');
-
-        if (!Number.isFinite(impliedG)) {
-            const span = document.createElement('span');
-            span.className = 'warning';
-            span.textContent = 'Kan ikke beregne implisitt vekst: sjekk WACC og terminal vekst.';
-            verdictDiv.appendChild(span);
-        } else if (impliedG > baseG + 2) {
-            const span = document.createElement('span');
-            span.style.color = '#c0392b';
-            span.textContent = `⚠️ Høye forventninger: Markedet krever ${impliedG.toFixed(1)}% årlig vekst, mye høyere enn ditt Base Case (${baseG}%).`;
-            verdictDiv.appendChild(span);
-        } else if (impliedG < baseG - 2) {
-            const span = document.createElement('span');
-            span.style.color = '#27ae60';
-            span.textContent = `✅ Lav terskel: Markedet krever kun ${impliedG.toFixed(1)}% årlig vekst. Hvis du tror på ${baseG}%, kan dette være attraktivt.`;
-            verdictDiv.appendChild(span);
-        } else {
-            const span = document.createElement('span');
-            span.style.color = '#f39c12';
-            span.textContent = `⚖️ Fair: Markedets forventning (${impliedG.toFixed(1)}%) er omtrent lik ditt estimat (${baseG}%).`;
-            verdictDiv.appendChild(span);
-        }
-    }
-
-    // Reverse DCF solver: find g such that PV(10-year cashflow + Gordon) ~= targetPrice (per share)
-    function solveReverse(targetPrice, startVal, rPercent, terminalGPercent) {
-        if (!Number.isFinite(targetPrice) || !Number.isFinite(startVal) || startVal <= 0) return NaN;
-        const r = rPercent;
-        const gTerm = terminalGPercent;
-
-        // If discount rate is <= terminal growth, Gordon formula would blow up (division by zero or negative). Bail out.
-        if (r <= gTerm) return NaN;
-
-        // Calculate PV for a given growth g (percent)
-        function calcVal(g) {
-            // g is percent
-            let val = 0, curr = startVal;
-            for (let i = 1; i <= 10; i++) {
-                curr *= (1 + g / 100);
-                val += curr / Math.pow(1 + r / 100, i);
-            }
-            // Terminal (Gordon): use gTerm as perpetual growth (percent)
-            const termVal = (curr * (1 + gTerm / 100)) / ((r - gTerm) / 100);
-            return val + (termVal / Math.pow(1 + r / 100, 10));
-        }
-
-        // Start with reasonable bracket, expand if necessary
-        let low = -50, high = 100;
-        let vLow = calcVal(low), vHigh = calcVal(high);
-
-        // Expand limits if targetPrice outside initial bracket, up to some safety limit
-        let expandIter = 0;
-        while ((vLow > targetPrice && vHigh > targetPrice) || (vLow < targetPrice && vHigh < targetPrice)) {
-            expandIter++;
-            if (expandIter > 50) break; // safety
-            low -= 50;
-            high += 100;
-            vLow = calcVal(low);
-            vHigh = calcVal(high);
-        }
-
-        // Binary search for g
-        let mid = 0;
-        for (let i = 0; i < 80; i++) {
-            mid = (low + high) / 2;
-            const v = calcVal(mid);
-            if (!Number.isFinite(v)) break;
-            const diff = v - targetPrice;
-            if (Math.abs(diff) < Math.max(0.1, Math.abs(targetPrice) * 1e-6)) return mid;
-            if (v < targetPrice) {
-                low = mid;
+        
+        if(price > 0) {
+            if(impG > baseG + 5) {
+                revDiv.innerHTML = `<span style="color:var(--danger)">🔴 <strong>Ekstreme forventninger.</strong> Markedet krever ${impG.toFixed(1)}% vekst. Du tror på ${baseG}%. Aksjen er trolig priset for perfeksjon.</span>`;
+            } else if (impG > baseG) {
+                revDiv.innerHTML = `<span style="color:var(--warning)">🟠 <strong>Høye forventninger.</strong> Markedet er mer optimistisk enn deg. Risiko for kursfall ved skuffelser.</span>`;
+            } else if (impG < baseG - 5) {
+                revDiv.innerHTML = `<span style="color:var(--success)">🟢 <strong>Pessimistisk marked.</strong> Markedet krever kun ${impG.toFixed(1)}% vekst. Hvis du har rett om ${baseG}%, er dette et kupp.</span>`;
             } else {
-                high = mid;
+                revDiv.innerHTML = `<span style="color:var(--success)">🟢 <strong>Lav terskel.</strong> Markedets krav er lavere enn dine forventninger. Dette er bra.</span>`;
             }
+        } else {
+            revDiv.innerText = "Venter på aksjekurs...";
         }
-        return mid;
     }
 
-    // Chart update
-    function updateChart(bear, base, bull, weighted, price) {
+    // --- MATH HELPERS ---
+    function solveRev(tPrice, sVal, r, gT) {
+        if(tPrice<=0 || sVal<=0) return 0;
+        function calc(g) {
+            let v=0, c=sVal;
+            for(let i=1;i<=10;i++){ c*=(1+g/100); v+=c/Math.pow(1+r/100,i); }
+            if(r<=gT) return 999999;
+            return v + (((c*(1+gT/100))/(r-gT)*100)/Math.pow(1+r/100,10));
+        }
+        let l=-50, h=100, m=0;
+        for(let i=0;i<50;i++){ m=(l+h)/2; let val=calc(m); if(Math.abs(val-tPrice)<0.1) return m; if(val<tPrice) l=m; else h=m; }
+        return m;
+    }
+
+    function updateChart(be,ba,bu,w,p) {
         const ctx = document.getElementById('forwardChart').getContext('2d');
-        if (chartFwd) chartFwd.destroy();
-        const data = [
-            Number.isFinite(bear) ? bear : 0,
-            Number.isFinite(base) ? base : 0,
-            Number.isFinite(bull) ? bull : 0,
-            Number.isFinite(weighted) ? weighted : 0,
-            Number.isFinite(price) ? price : 0
-        ];
+        if(chartFwd) chartFwd.destroy();
         chartFwd = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Bear', 'Base', 'Bull', 'Vektet', 'Pris'],
-                datasets: [{
-                    label: 'NOK',
-                    data: data,
-                    backgroundColor: ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#95a5a6'],
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } }
-            }
+            type:'bar',
+            data: { labels: ['Bear','Base','Bull','Vektet','Dagens Kurs'], datasets:[{ label: 'Pris (NOK)', data:[be,ba,bu,w,p], backgroundColor:['#e74c3c','#3498db','#2ecc71','#f1c40f','#95a5a6'], borderRadius:5 }] },
+            options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
         });
+    }
+
+    // --- PDF ENGINE ---
+    function setupDragDrop() {
+        const zone = document.getElementById('drop-zone');
+        const input = document.getElementById('fileInput');
+        if(!zone || !input) return;
+
+        zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('dragover');
+        zone.addEventListener('drop', (e) => { e.preventDefault(); zone.classList.remove('dragover'); if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+        input.addEventListener('change', (e) => { if(e.target.files.length) handleFile(e.target.files[0]); });
+    }
+
+    function handleFile(file) {
+        if(file.type !== 'application/pdf') { alert("Kun PDF."); return; }
+        document.getElementById('file-name').innerText = file.name;
+        for(let k in foundData) foundData[k] = null;
+    }
+
+    function cancelScan() { abortScan = true; }
+
+    async function processPDF() {
+        if(isScanning) return;
+        const file = document.getElementById('fileInput').files[0] || (document.getElementById('drop-zone').files ? document.getElementById('drop-zone').files[0] : null);
+        if(!file) { alert("Velg fil."); return; }
+
+        isScanning = true; abortScan = false;
+        document.getElementById('btn-scan').classList.add('hidden'); document.getElementById('btn-cancel').classList.remove('hidden');
+        document.getElementById('currency-control').classList.remove('hidden');
+        
+        const statusEl = document.getElementById('scan-status');
+        const pBar = document.getElementById('progress-bar');
+        statusEl.style.display = 'block'; statusEl.innerText = "Starter analyse...";
+
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                const pdf = await pdfjsLib.getDocument(new Uint8Array(e.target.result)).promise;
+                const totalPages = pdf.numPages;
+                let detCurrency = null; let detTicker = null;
+
+                for(let i=1; i<=totalPages; i++) {
+                    if(abortScan) { statusEl.innerText = "Avbrutt."; break; }
+                    statusEl.innerText = `Analyserer side ${i} av ${totalPages}...`;
+                    pBar.style.width = ((i/totalPages)*100) + "%";
+                    
+                    const page = await pdf.getPage(i);
+                    const text = (await page.getTextContent()).items.map(s => s.str).join(' ');
+                    analyzeTextChunk(text);
+                    
+                    if(!detCurrency) {
+                        const m = text.match(/\b(USD|EUR|NOK|SEK|DKK|GBP)\b/);
+                        if(m) detCurrency = m[1];
+                    }
+                    if(!detTicker && i<5) {
+                         const t = text.match(/(?:Ticker|Symbol|Stock code)[:\s]+([A-Z]{2,6})/i);
+                         if(t) detTicker = t[1];
+                         else { const o = text.match(/\b(OSE|Oslo Børs)[:\s]*([A-Z]{2,6})/i); if(o) detTicker = o[2]; }
+                    }
+                    page.cleanup(); await new Promise(r => setTimeout(r, 0));
+                }
+                
+                if(detCurrency) {
+                    document.getElementById('reportCurrency').value = detCurrency;
+                    if(detCurrency === "NOK") document.getElementById('fxRate').value = 1;
+                    else document.getElementById('fxRate').value = "";
+                }
+                if(detTicker) document.getElementById('ticker').value = detTicker;
+
+                if(!abortScan) statusEl.innerText = "Ferdig!";
+                updateSummaryTable(); updateFxCalculation();
+            } catch(err) { console.error(err); alert("Feil: " + err.message); } 
+            finally { isScanning = false; document.getElementById('btn-scan').classList.remove('hidden'); document.getElementById('btn-cancel').classList.add('hidden'); }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function analyzeTextChunk(text) {
+        const numPat = "([\\(\\-]?[\\d]{1,3}(?:[\\s.,]\\d{3})*(?:[.,]\\d+)?\\)?)";
+        const patterns = {
+            'Revenue': new RegExp("(?:Revenue|Total Revenue|Operating Revenue|Sales|Turnover|Salgsinntekter|Driftsinntekter|Sum driftsinntekter|Omsetning)[\\s\\w\\W]{0,50}?" + numPat, "i"),
+            'Gross Profit': new RegExp("(?:Gross Profit|Gross Income|Bruttofortjeneste|Bruttoresultat)[\\s\\w\\W]{0,50}?" + numPat, "i"),
+            'Operating Profit': new RegExp("(?:Operating Profit|Operating Income|EBIT|Operating Earnings|Driftsresultat|Operasjonelt driftsresultat)[\\s\\w\\W]{0,50}?" + numPat, "i"),
+            'Net Profit': new RegExp("(?:Net Profit|Net Income|Profit for the year|Profit \\(loss\\) for the period|Årsresultat|Resultat etter skatt|Nettoresultat|Profit after tax|Net income attributable to)[\\s\\w\\W]{0,50}?" + numPat, "i"),
+            'EPS': new RegExp("(?:Earnings Per Share|Basic Earnings Per Share|EPS|Resultat per aksje|Fortjeneste per aksje)[\\s\\w\\W]{0,50}?" + numPat, "i"),
+            'Free Cash Flow': new RegExp("(?:Free Cash Flow|FCF|Fri kontantstrøm|Net cash flow from operating activities|Netto kontantstrøm fra operasjonelle aktiviteter)[\\s\\w\\W]{0,50}?" + numPat, "i"),
+            'Shares': new RegExp("(?:Weighted average number of shares|Weighted average shares|Shares outstanding|Average shares|Antall aksjer|Gjennomsnittlig antall aksjer)[\\s\\w\\W]{0,50}?" + numPat, "i")
+        };
+
+        const parse = (s) => {
+            if(!s) return 0;
+            let c = s.replace(/\s/g, '');
+            let neg = false;
+            if(c.startsWith('(') && c.endsWith(')')) { neg = true; c = c.slice(1,-1); }
+            else if(c.startsWith('-')) { neg = true; c = c.substring(1); }
+            
+            if(c.includes(',') && c.includes('.')) { if(c.lastIndexOf(',') > c.lastIndexOf('.')) c=c.replace(/\./g,'').replace(',','.'); else c=c.replace(/,/g,''); }
+            else if(c.includes(',')) c = c.replace(',','.');
+            let v = parseFloat(c); return neg ? -v : v;
+        };
+
+        for(const [k, reg] of Object.entries(patterns)) {
+            if(foundData[k]) continue; 
+            const m = text.match(reg);
+            if(m && m[1]) { const v = parse(m[1]); if(v !== 0) foundData[k] = v; }
+        }
+    }
+
+    function updateSummaryTable() {
+        const body = document.getElementById('summaryTableBody'); body.innerHTML = "";
+        for(const [k, v] of Object.entries(foundData)) body.innerHTML += `<tr><td>${k}</td><td>${v ? v.toLocaleString() : '-'}</td><td>${v?'✅':'❌'}</td></tr>`;
+        updateFxCalculation();
+    }
+
+    function updateFxCalculation() {
+        const fx = parseFloat(document.getElementById('fxRate').value) || 1.0;
+        if(foundData['Free Cash Flow']) document.getElementById('totalFcf').value = (foundData['Free Cash Flow'] * fx).toFixed(2);
+        if(foundData['Shares']) document.getElementById('shares').value = foundData['Shares'];
+        if(foundData['EPS']) document.getElementById('epsValue').value = (foundData['EPS'] * fx).toFixed(2);
+        else if (foundData['Net Profit'] && foundData['Shares']) document.getElementById('epsValue').value = ((foundData['Net Profit'] / foundData['Shares']) * fx).toFixed(2);
+        calculateAll();
     }
 </script>
 
