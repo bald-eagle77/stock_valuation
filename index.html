@@ -16,12 +16,12 @@
             --primary: #2c3e50; 
             --accent: #3498db; 
             --accent-dark: #2980b9;
-            --bg: #f0f2f5; 
+            --bg: #f8f9fa; 
             --text: #333; 
             --success: #27ae60; 
             --danger: #e74c3c; 
             --warning: #f39c12; 
-            --card-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            --card-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
         
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: var(--text); padding: 20px; margin: 0; line-height: 1.6; }
@@ -34,9 +34,9 @@
         
         /* Guide Section */
         .guide-toggle { 
-            background: #fff; border: 2px solid var(--accent); color: var(--accent-dark); 
-            padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: bold; 
-            display: block; margin: 0 auto 20px auto; transition: 0.3s;
+            background: #fff; border: 1px solid var(--accent); color: var(--accent-dark); 
+            padding: 8px 20px; border-radius: 20px; cursor: pointer; font-weight: 600; 
+            display: block; margin: 0 auto 20px auto; transition: 0.3s; font-size: 0.9em;
         }
         .guide-toggle:hover { background: var(--accent); color: white; }
         
@@ -48,42 +48,51 @@
         @media (max-width: 700px) { .guide-grid { grid-template-columns: 1fr; } }
 
         /* Cards */
-        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: var(--card-shadow); margin-bottom: 20px; transition: transform 0.2s; }
+        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: var(--card-shadow); margin-bottom: 20px; }
         
         /* Tabs */
         .tab-container { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
         .tab-btn { 
-            background: #e0e0e0; border: none; padding: 12px 30px; cursor: pointer; 
-            border-radius: 25px; font-weight: bold; color: #555; transition: 0.2s; 
+            background: #e9ecef; border: none; padding: 10px 25px; cursor: pointer; 
+            border-radius: 20px; font-weight: 600; color: #555; transition: 0.2s; 
         }
-        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); }
+        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         
         /* Inputs & Tooltips */
         .input-group { margin-bottom: 15px; position: relative; }
         label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; color: var(--primary); }
         input[type="number"], input[type="text"], select { 
-            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1em; box-sizing: border-box; transition: border 0.3s;
+            width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 6px; font-size: 1em; box-sizing: border-box; transition: border 0.3s;
         }
         input:focus { outline: none; border-color: var(--accent); }
         .highlight-input { border: 2px solid var(--accent) !important; background-color: #fafdff; }
 
-        /* Tooltip Icon */
+        /* Tooltip Icon - Improved */
         .info-icon {
-            display: inline-block; width: 18px; height: 18px; background: #ddd; color: #555;
-            border-radius: 50%; text-align: center; line-height: 18px; font-size: 0.8em;
-            cursor: help; margin-left: 5px; position: relative;
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 18px; height: 18px; background: #e9ecef; color: #666;
+            border-radius: 50%; font-size: 0.75em; cursor: help; margin-left: 6px; 
+            position: relative; top: -1px;
         }
+        .info-icon:hover { background: var(--accent); color: white; }
+        
         .info-icon:hover::after {
             content: attr(data-tooltip);
             position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
-            background: #333; color: white; padding: 8px 12px; borderRadius: 6px;
-            font-size: 0.85em; width: 200px; z-index: 100; font-weight: normal; line-height: 1.4;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            background: #2c3e50; color: #fff; padding: 12px 15px; border-radius: 8px;
+            font-size: 0.85rem; width: 280px; z-index: 100; font-weight: normal; line-height: 1.5;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: left;
+            pointer-events: none;
+        }
+        /* Triangle for tooltip */
+        .info-icon:hover::before {
+            content: ''; position: absolute; bottom: 19px; left: 50%; transform: translateX(-50%);
+            border: 6px solid transparent; border-top-color: #2c3e50; z-index: 100;
         }
 
         /* Upload Zone */
-        .upload-zone { border: 2px dashed #ccc; padding: 30px; text-align: center; border-radius: 10px; background: #fafafa; transition: 0.3s; margin-bottom: 15px; cursor: pointer; }
-        .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: #f0f8ff; }
+        .upload-zone { border: 2px dashed #ced4da; padding: 30px; text-align: center; border-radius: 10px; background: #fafafa; transition: 0.3s; margin-bottom: 15px; cursor: pointer; }
+        .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent); background: #f1f8ff; }
 
         /* Grids */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -91,19 +100,22 @@
         .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; }
         @media (max-width: 900px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
 
-        /* Scenario Styling */
-        .scenario-box { padding: 15px; border-radius: 8px; border: 1px solid #eee; background: #fafafa; display: flex; flex-direction: column; justify-content: space-between; }
+        /* Scenario Styling - Cleaner */
+        .scenario-box { 
+            padding: 15px; border-radius: 8px; border: 1px solid #e9ecef; background: #fff; 
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
         .bear { border-top: 4px solid var(--danger); }
-        .base { border-top: 4px solid var(--accent); background: #fdfdfd; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .base { border-top: 4px solid var(--accent); background: #f8fbff; border-color: #dbeafe; }
         .bull { border-top: 4px solid var(--success); }
         
         .scenario-result {
-            margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.1);
-            text-align: center; font-weight: bold; font-size: 1.1em;
+            margin-top: 15px; padding-top: 10px; 
+            text-align: center; font-weight: bold; font-size: 1.2em;
         }
         
         /* Buttons */
-        .btn { border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; width: 100%; font-size: 1em; }
+        .btn { border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; width: 100%; font-size: 1em; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
@@ -111,8 +123,8 @@
 
         /* Results */
         .result-box { text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px; margin-top: 10px; }
-        .verdict-text { font-size: 1.1em; margin-top: 10px; line-height: 1.5; font-weight: 500; }
-        .price-large { font-size: 2em; font-weight: bold; margin: 5px 0; }
+        .verdict-text { font-size: 1.05em; margin-top: 10px; line-height: 1.5; font-weight: 500; }
+        .price-large { font-size: 2.2em; font-weight: 800; margin: 5px 0; color: var(--primary); }
         .status-badge { display: inline-block; padding: 5px 12px; border-radius: 15px; font-size: 0.9em; font-weight: bold; color: white; margin-bottom: 10px;}
 
         .hidden { display: none !important; }
@@ -130,32 +142,31 @@
 <div class="container">
     
     <h1>Investeringshjelpen</h1>
-    <p class="subtitle">Er aksjen billig eller dyr? En enkel analysehjelper.</p>
+    <p class="subtitle">Beregne verdien av aksjer – enkelt forklart</p>
 
     <button class="guide-toggle" onclick="toggleGuide()">❓ Nybegynner? Klikk her for veiledning</button>
     
     <div id="guide-content" class="guide-content">
         <h3>Slik bruker du verktøyet:</h3>
-        <p>Dette verktøyet hjelper deg å finne "riktig pris" på et selskap ved å se på hvor mye penger de tjener (kontantstrøm). Vi bruker to metoder samtidig:</p>
+        <p>Vi bruker to metoder for å sjekke om prisen er "riktig":</p>
         <div class="guide-grid">
             <div>
                 <strong>1. Verdsettelse (Forward DCF)</strong>
-                <p>Her gjetter vi på fremtiden. Du legger inn hvor mye du tror selskapet vil vokse. Appen forteller deg hva aksjen bør koste i dag basert på dine gjetninger.</p>
+                <p>Du gjetter på fremtiden (vekst). Appen beregner hva aksjen er verdt i dag.</p>
                 <ul>
-                    <li>Resultat > Dagens kurs = <span style="color:green; font-weight:bold;">BILLIG (Kjøp)</span></li>
-                    <li>Resultat < Dagens kurs = <span style="color:red; font-weight:bold;">DYR (Vent)</span></li>
+                    <li>Din verdi > Dagens kurs = <span style="color:green; font-weight:bold;">Kjøpskandidat</span></li>
+                    <li>Din verdi < Dagens kurs = <span style="color:red; font-weight:bold;">For dyr</span></li>
                 </ul>
             </div>
             <div>
                 <strong>2. Forventninger (Reverse DCF)</strong>
-                <p>Her ser vi på hva markedet tror. Appen regner "baklengs" fra dagens aksjekurs.</p>
+                <p>Appen sjekker hva <em>markedet</em> tror basert på dagens pris.</p>
                 <ul>
-                    <li>Implisitt vekst er <strong>høyere</strong> enn du tror er realistisk = <span style="color:red; font-weight:bold;">DYR</span></li>
-                    <li>Implisitt vekst er <strong>lavere</strong> enn du tror = <span style="color:green; font-weight:bold;">BILLIG</span> (Markedet er pessimistisk)</li>
+                    <li>Hvis markedet krever urealistisk høy vekst = <span style="color:red; font-weight:bold;">For dyr</span></li>
+                    <li>Hvis markedets krav er lave og lette å slå = <span style="color:green; font-weight:bold;">Kjøpskandidat</span></li>
                 </ul>
             </div>
         </div>
-        <p style="margin-top:15px; font-size:0.9em; color:#555;"><em>Tips: Vær heller litt konservativ (pessimistisk) i dine anslag. Det er bedre å bli positivt overrasket!</em></p>
     </div>
 
     <div class="tab-container">
@@ -196,7 +207,7 @@
                     <input type="text" id="listingCurrency" value="NOK">
                 </div>
                 <div class="input-group">
-                    <label>Vekslingskurs <span class="info-icon" data-tooltip="Hvor mye koster 1 enhet av rapportvalutaen i noteringsvalutaen? F.eks USDNOK = 11.0">ℹ️</span></label>
+                    <label>Vekslingskurs <span class="info-icon" data-tooltip="F.eks USDNOK = 11.0. Dette gjør om tallene fra rapporten til din valuta.">ℹ️</span></label>
                     <input type="number" id="fxRate" value="1.0" step="0.01" oninput="updateFxCalculation()">
                 </div>
             </div>
@@ -218,11 +229,11 @@
                 <input type="text" id="ticker" placeholder="F.eks. EQNR">
             </div>
             <div class="input-group">
-                <label>Dagens Aksjekurs <span class="info-icon" data-tooltip="Hva koster aksjen akkurat nå?">ℹ️</span></label>
+                <label>Dagens Aksjekurs <span class="info-icon" data-tooltip="Hva handles aksjen for akkurat nå?">ℹ️</span></label>
                 <input type="number" id="currentPrice" placeholder="Må fylles ut" step="0.1" class="highlight-input">
             </div>
             <div class="input-group">
-                <label>Avkastningskrav % <span class="info-icon" data-tooltip="Hvor mye avkastning krever du? Normalt: 10%. Trygt selskap: 6-8%. Risikabelt: 12-15%.">ℹ️</span></label>
+                <label>Avkastningskrav % <span class="info-icon" data-tooltip="Hvor mye avkastning krever du årlig? Normalt: 10%. Trygge giganter: 7-8%. Risikable småselskaper: 12-15%.">ℹ️</span></label>
                 <input type="number" id="discountRate" value="10.0" step="0.5">
             </div>
             <div class="input-group">
@@ -234,7 +245,7 @@
         <div style="background:#f8f9fa; padding:15px; border-radius:8px; margin-top:10px;">
             <div id="fcf-inputs" class="grid-2">
                 <div class="input-group" style="margin:0;">
-                    <label>Total Free Cash Flow (Mill) <span class="info-icon" data-tooltip="Penger selskapet sitter igjen med etter alle utgifter. Også kalt 'Eierinntekt'.">ℹ️</span></label>
+                    <label>Total Free Cash Flow (Mill) <span class="info-icon" data-tooltip="Penger som er igjen i kassa etter at alle utgifter og investeringer er betalt. Dette er 'eierinntekten' som kan brukes til utbytte.">ℹ️</span></label>
                     <input type="number" id="totalFcf" value="1000">
                 </div>
                 <div style="display:flex; align-items:flex-end;">
@@ -266,30 +277,39 @@
                 <div class="scenario-box bear">
                     <label style="color:var(--danger);">🐻 Pessimistisk</label>
                     <div class="input-group"><input type="number" id="bearG" value="2"><small>Vekst %</small></div>
-                    <div class="input-group"><input type="number" id="bearM" value="10"><small>Exit x</small></div>
+                    <div class="input-group"><input type="number" id="bearM" value="10"><small>Exit X</small></div>
                     <div class="input-group"><input type="number" id="bearP" value="25"><small>Sannsynlighet %</small></div>
-                    <div class="scenario-result" style="color:var(--danger);">Verdi: <span id="dispBear">---</span></div>
+                    <div class="scenario-result" style="color:var(--danger);"><span id="dispBear">---</span></div>
                 </div>
                 <div class="scenario-box base">
                     <label style="color:var(--accent-dark);">🔵 Realistisk</label>
-                    <div class="input-group"><input type="number" id="baseG" value="8"><small>Vekst %</small></div>
-                    <div class="input-group"><input type="number" id="baseM" value="15"><small>Exit x</small></div>
-                    <div class="input-group"><input type="number" id="baseP" value="50"><small>Sannsynlighet %</small></div>
-                    <div class="scenario-result" style="color:var(--accent-dark);">Verdi: <span id="dispBase">---</span></div>
+                    <div class="input-group">
+                        <label style="font-size:0.8em;">Vekst % <span class="info-icon" data-tooltip="Årlig vekst i overskudd de neste 5 årene. 2-3% er normal BNP-vekst. 10%+ er kraftig vekst. Vær forsiktig med høye tall!">ℹ️</span></label>
+                        <input type="number" id="baseG" value="8">
+                    </div>
+                    <div class="input-group">
+                        <label style="font-size:0.8em;">Exit X <span class="info-icon" data-tooltip="Exit Multippel (P/E om 5 år). Hva er markedet villig til å betale for 1 krone overskudd? Sjekk historisk P/E for selskapet! Normalt: 15x. Høy vekst: 20-25x. Lav vekst: 8-12x.">ℹ️</span></label>
+                        <input type="number" id="baseM" value="15">
+                    </div>
+                    <div class="input-group">
+                        <label style="font-size:0.8em;">Sannsynlighet %</label>
+                        <input type="number" id="baseP" value="50">
+                    </div>
+                    <div class="scenario-result" style="color:var(--accent-dark);"><span id="dispBase">---</span></div>
                 </div>
                 <div class="scenario-box bull">
                     <label style="color:var(--success);">🐂 Optimistisk</label>
                     <div class="input-group"><input type="number" id="bullG" value="15"><small>Vekst %</small></div>
-                    <div class="input-group"><input type="number" id="bullM" value="20"><small>Exit x</small></div>
+                    <div class="input-group"><input type="number" id="bullM" value="20"><small>Exit X</small></div>
                     <div class="input-group"><input type="number" id="bullP" value="25"><small>Sannsynlighet %</small></div>
-                    <div class="scenario-result" style="color:var(--success);">Verdi: <span id="dispBull">---</span></div>
+                    <div class="scenario-result" style="color:var(--success);"><span id="dispBull">---</span></div>
                 </div>
             </div>
             
             <div style="text-align:right; font-size:0.8em; color:var(--danger); margin-bottom:10px;" id="probWarning"></div>
 
             <div class="result-box">
-                <small>DIN ESTMERTE VERDI</small>
+                <small style="text-transform:uppercase; color:#888; letter-spacing:1px; font-weight:bold;">Din estimerte verdi</small>
                 <div class="price-large" id="valWeighted">---</div>
                 <div id="valUpsideBadge" class="status-badge" style="background:#ccc;">Venter...</div>
                 <div class="verdict-text" id="forwardVerdict">Fyll inn dagens kurs for å se resultatet.</div>
@@ -302,16 +322,16 @@
             <p style="font-size:0.85em; color:#666; margin-bottom:15px;">Hva tror markedet? (Reverse DCF)</p>
             
             <div class="input-group" style="max-width:200px;">
-                <label>Terminal Vekst <span class="info-icon" data-tooltip="Evig vekst etter år 10. Bør ikke være høyere enn inflasjon/BNP (2-3%).">ℹ️</span></label>
+                <label>Terminal Vekst <span class="info-icon" data-tooltip="Hvor mye vokser selskapet 'til evig tid' etter år 10? Bør ikke overstige inflasjon (2-3%).">ℹ️</span></label>
                 <div style="display:flex; align-items:center; gap:5px;">
                     <input type="number" id="termG" value="2.5" step="0.1"> <span>%</span>
                 </div>
             </div>
 
             <div class="reverse-box" style="margin-top:20px;">
-                <small>FOR Å FORSVARE DAGENS KURS MÅ SELSKAPET VOKSE:</small>
+                <small style="text-transform:uppercase; color:#888; font-weight:bold;">Markedet priser inn årlig vekst på:</small>
                 <div class="implied-rate" id="revImplied">---%</div>
-                <small>HVERT ÅR I 10 ÅR</small>
+                <small style="color:#666;">De neste 10 årene</small>
             </div>
 
             <div class="result-box" style="background:white; border:1px solid #eee;">
@@ -402,9 +422,9 @@
         const bullVal = calcScenario(getNum('bullG'), getNum('bullM'));
         
         // Oppdater individuelle summer
-        document.getElementById('dispBear').innerText = bearVal.toFixed(2) + " NOK";
-        document.getElementById('dispBase').innerText = baseVal.toFixed(2) + " NOK";
-        document.getElementById('dispBull').innerText = bullVal.toFixed(2) + " NOK";
+        document.getElementById('dispBear').innerText = bearVal.toFixed(0);
+        document.getElementById('dispBase').innerText = baseVal.toFixed(0);
+        document.getElementById('dispBull').innerText = bullVal.toFixed(0);
 
         const pBear = getNum('bearP'), pBase = getNum('baseP'), pBull = getNum('bullP');
         const wVal = (bearVal*pBear/100) + (baseVal*pBase/100) + (bullVal*pBull/100);
